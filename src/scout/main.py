@@ -1,16 +1,19 @@
 import mido
 import numpy as np
+from scout.spaces import ScaleSpace, PitchSpace
 from time import sleep
 
 
 def main():
     outport = mido.open_output('IAC Driver Bus 1')
 
-    base_chord = np.array([60, 67, 72])
-    ts = [0, 3, 7, 0]
+    base_chord = np.array([0, 3, 5])
+    ts = [0, 2, 5, 0]
     chords = list()
+    scale = ScaleSpace(root=60)
+    pitch_space = PitchSpace()
     for t in ts:
-        chords.append(base_chord + t)
+        chords.append(scale.pitch_values(pitch_space, base_chord + t))
     for chord in chords:
         for note in np.nditer(chord):
             msg = mido.Message('note_on', note=int(note), velocity=100)
