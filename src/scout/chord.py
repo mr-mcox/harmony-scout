@@ -25,19 +25,17 @@ class ChordInstance:
 
 
 class ClassTemplate:
-    def __init__(self, pitch_space=None):
-        if pitch_space is None:
-            pitch_space = PitchSpace()
-        self.pitch_space = pitch_space
+    def __init__(self, pitch_space=None, scale_space=None):
+        self.pitch_space = PitchSpace() if pitch_space is None else pitch_space
+        self.scale_space = scale_space
 
     def generate(self, dependencies=None):
         raise NotImplementedError
 
 
 class ExactScaleCT(ClassTemplate):
-    def __init__(self, scale_space, scale_values):
-        super().__init__(self)
-        self.scale_space = scale_space
+    def __init__(self, scale_values, scale_space):
+        super().__init__(self, scale_space)
         self.scale_values = scale_values
 
     def generate(self, dependencies=None):
@@ -47,8 +45,7 @@ class ExactScaleCT(ClassTemplate):
 
 class RandomWalkCT(ClassTemplate):
     def __init__(self, scale_space, walk_mean=0, walk_sd=2, stacked_scale=3):
-        super().__init__(self)
-        self.scale_space = scale_space
+        super().__init__(self, scale_space)
         self.walk_mean = walk_mean
         self.walk_sd = walk_sd
         self.stacked_scale = stacked_scale
@@ -61,3 +58,8 @@ class RandomWalkCT(ClassTemplate):
         scale_values = np.round(np.concatenate([root, stack])).cumsum().astype(int)
         return ChordInstance(
             scale_space=self.scale_space, scale_values=scale_values)
+
+class CopyCT(ClassTemplate):
+
+    def generate(self, dependencies):
+        return dependencies[0]
