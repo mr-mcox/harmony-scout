@@ -2,7 +2,7 @@ import mido
 import numpy as np
 from scout.spaces import ScaleSpace
 from scout.chord import ExactScaleCT, RandomWalkCT, CopyCT
-from scout.scoring import voice_leading_efficiency, no_movement
+from scout.scoring import voice_leading_efficiency, no_movement, max_center_from_start
 from scout.sequence import SequenceTemplate
 from time import sleep
 from operator import itemgetter
@@ -16,8 +16,10 @@ def main():
     c2 = RandomWalkCT(scale_space=scale)
     c3 = CopyCT()
     chord_templates = [c1, c2, c2, c3]
-    scoring_rules = [(-1, voice_leading_efficiency), (-20, no_movement)]
-    st = SequenceTemplate(chord_templates=chord_templates, scoring_rules=scoring_rules)
+    scoring_rules = [(-1, voice_leading_efficiency), (-20, no_movement),
+                     (1, max_center_from_start)]
+    st = SequenceTemplate(
+        chord_templates=chord_templates, scoring_rules=scoring_rules)
     st.add_link(0, 1)
     st.add_link(1, 2)
     st.add_link(0, 3)
