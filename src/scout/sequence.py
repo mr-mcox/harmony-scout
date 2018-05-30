@@ -1,11 +1,22 @@
 import attr
 from copy import deepcopy
+import numpy as np
 
 
 @attr.s
 class SequenceInstance:
 
     chords = attr.ib(default=list())
+    scoring_rules = attr.ib(default=list())
+
+    def pitches_as_array(self):
+        return np.stack([c.pitches for c in self.chords])
+
+    def score(self):
+        total = 0
+        for mul, rule in self.scoring_rules:
+            total += mul * rule(self)
+        return total
 
 
 def graph_children(graph, parent):
@@ -17,10 +28,11 @@ def graph_parents(graph, child):
 
 
 class SequenceTemplate:
-    def __init__(self, chord_templates=None):
+    def __init__(self, chord_templates=None, scoring_rules=None):
         self.chord_templates = list(
         ) if chord_templates is None else chord_templates
         self._links = set()
+        self.scoring_rules = list() if scoring_rules is None else scoring_rules
 
     def generate(self):
         chord_by_idx = dict()
@@ -29,7 +41,7 @@ class SequenceTemplate:
             chord_by_idx[idx] = self.chord_templates[idx].generate(deps)
         chords = [chord_by_idx[i] for i in range(len(self.chord_templates))]
 
-        return SequenceInstance(chords=chords)
+        return SequenceInstance(chords=chords, scoring_rules=self.scoring_rules)
 
     def add_link(self, parent, child):
         self._links.add((parent, child))
