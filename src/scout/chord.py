@@ -44,7 +44,7 @@ class ExactScaleCT(ClassTemplate):
 
 
 class RandomWalkCT(ClassTemplate):
-    def __init__(self, scale_space, walk_mean=0, walk_sd=2, stacked_scale=3):
+    def __init__(self, scale_space, walk_mean=0, walk_sd=2, stacked_scale=2):
         super().__init__(self, scale_space)
         self.walk_mean = walk_mean
         self.walk_sd = walk_sd
@@ -54,7 +54,7 @@ class RandomWalkCT(ClassTemplate):
         dep = dependencies[0].scale_values
         walk = np.random.normal(self.walk_mean, self.walk_sd, size=1)
         root = np.round(dep[0] + walk)
-        stack = np.random.exponential(self.stacked_scale, size=dep.shape[0]-1)
+        stack = np.random.exponential(self.stacked_scale, size=dep.shape[0]-1) * 2
         scale_values = np.round(np.concatenate([root, stack])).cumsum().astype(int)
         return ChordInstance(
             scale_space=self.scale_space, scale_values=scale_values)
