@@ -125,6 +125,14 @@ def play_chords(chords):
             outport.send(mido.Message('note_off', note=int(note)))
     outport.close()
 
+def parallel_vecs(pcs):
+    pcs = np.array(pcs)
+    unit = np.ones(pcs.shape[1])
+    norm = unit / np.linalg.norm(unit)
+    diffs = pcs[1:] - pcs[:-1]
+    d_norm = diffs / np.linalg.norm(diffs, axis=1, keepdims=True)
+    print(np.dot(d_norm, norm))
+
 
 if __name__ == '__main__':
     pcs = generate_pitch_class(n=3)
@@ -133,4 +141,5 @@ if __name__ == '__main__':
     v = Voicer([60, 64, 67], voicings)
     classes = [[0, 4, 7], [-3, 2, 5], [-1, 2, 7], [0, 4, 7]]
     chords = [v.from_pitch_class(p) for p in classes]
+    parallel_vecs(classes)
     play_chords(chords)
