@@ -47,8 +47,7 @@ def filter_pitch_class(pcs):
     key_2ov = np.concatenate([key_1ov, key_1ov - 12])
     key = set(key_2ov.tolist())
     for pc in pcs:
-        if pc_in_key(pc,
-                     key) and has_no_duplicates(pc) and max_interval_lte(pc):
+        if pc_in_key(pc, key) and has_no_duplicates(pc) and max_interval_lte(pc):
             new_pcs.add(pc)
     return new_pcs
 
@@ -99,31 +98,32 @@ def generate_voicings(n, pitches, pitch_classes):
 
 
 def main():
-    outport = mido.open_output('IAC Driver Bus 1')
+    outport = mido.open_output("IAC Driver Bus 1")
     pitch_classes = np.array([[0, 4, 7], [-3, 2, 5], [-1, 2, 7]])
     v = Voicer(root=60, start=[0, 4, 7])
     chords = v.from_pitch_class(pitch_classes)
 
     for chord in chords:
         for note in chord:
-            msg = mido.Message('note_on', note=int(note), velocity=100)
+            msg = mido.Message("note_on", note=int(note), velocity=100)
             outport.send(msg)
         sleep(1)
         for note in chord:
-            outport.send(mido.Message('note_off', note=int(note)))
+            outport.send(mido.Message("note_off", note=int(note)))
     outport.close()
 
 
 def play_chords(chords):
-    outport = mido.open_output('IAC Driver Bus 1')
+    outport = mido.open_output("IAC Driver Bus 1")
     for chord in chords:
         for note in chord:
-            msg = mido.Message('note_on', note=int(note), velocity=100)
+            msg = mido.Message("note_on", note=int(note), velocity=100)
             outport.send(msg)
         sleep(1)
         for note in chord:
-            outport.send(mido.Message('note_off', note=int(note)))
+            outport.send(mido.Message("note_off", note=int(note)))
     outport.close()
+
 
 def parallel_vecs(pcs):
     pcs = np.array(pcs)
@@ -134,12 +134,12 @@ def parallel_vecs(pcs):
     print(np.dot(d_norm, norm))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pcs = generate_pitch_class(n=3)
     pcs = filter_pitch_class(pcs)
     voicings = generate_voicings(3, range(60, 96), pcs)
     v = Voicer([60, 64, 67], voicings)
-    classes = [[0, 4, 7], [-3, 2, 5], [-1, 2, 7], [0, 4, 7]]
+    classes = [[0, 4, 7], [-1, 2, 5], [-3, 2, 5], [-1, 2, 7], [0, 4, 7]]
     chords = [v.from_pitch_class(p) for p in classes]
     parallel_vecs(classes)
     play_chords(chords)
