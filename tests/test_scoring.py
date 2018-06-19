@@ -1,6 +1,6 @@
 import numpy as np
 import attr
-from scout.scoring import voice_leading_efficiency, no_movement, max_center_from_start
+from scout import voice_leading_efficiency, no_movement, max_center_from_start
 
 
 @attr.s

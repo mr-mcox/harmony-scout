@@ -1,4 +1,4 @@
-from scout.spaces import ScaleSpace, PitchSpace
+from scout import ScaleSpace, PitchSpace
 import numpy as np
 from numpy.testing import assert_equal
 
