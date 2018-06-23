@@ -1,8 +1,8 @@
 import mido
 import numpy as np
 from time import sleep
-from scout.voicer import Voicer
-from scout.helpers import is_ordered, spans_lte_octave, sum_in_range
+from old_scout.voicer import Voicer
+from old_scout.helpers import is_ordered, spans_lte_octave, sum_in_range
 import itertools
 
 

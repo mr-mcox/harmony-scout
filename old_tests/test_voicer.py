@@ -1,4 +1,4 @@
-from scout.voicer import Voicer
+from old_scout.voicer import Voicer
 import numpy as np
 
 

@@ -1,4 +1,4 @@
-from scout.spaces import PitchSpace
+from old_scout.spaces import PitchSpace
 import numpy as np
 
 

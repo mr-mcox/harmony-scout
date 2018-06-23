@@ -1,4 +1,4 @@
-from scout import SequenceTemplate
+from old_scout import SequenceTemplate
 
 
 def test_sequence_template_link():

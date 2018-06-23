@@ -1,4 +1,4 @@
-from scout.helpers import is_ordered, spans_lte_octave, sum_in_range
+from old_scout.helpers import is_ordered, spans_lte_octave, sum_in_range
 import pytest
 
 
