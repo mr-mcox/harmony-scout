@@ -90,6 +90,19 @@ class Judge(Module):
 
 
 class Rhythm(Module):
+    """Generate triggers at specified durations
+
+    Parameters
+    ----------
+    durations: list of int
+        Duration of each attack
+
+    Returns
+    -------
+    out: float
+        1 on trigger, 0 otherwise
+    """
+
     default_output = {"out": 1}
     default_params = {"durations": [1]}
 
