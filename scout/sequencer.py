@@ -20,10 +20,6 @@ def build_modules(configs, sequencer):
             params=config.get("params", {}),
             patches=config.get("patches", []),
         )
-        connections = [
-            (c["source"]["name"], module.name) for c in config.get("patches", {})
-        ]
-        sequencer.register(module, connections=connections)
 
 
 def graph_children(graph, parent):

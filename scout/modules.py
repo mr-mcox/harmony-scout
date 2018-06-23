@@ -35,11 +35,16 @@ class Module:
     input_parameter_map = {}
 
     def __init__(self, sequencer, name=None, params=None, patches=None):
+        patches = patches if patches else list()
         self.sequencer = sequencer
         self._name = name
         self.params = self.merge_params_with_default(params)
         self.output = deepcopy(self.default_output)
         self.input = InputLookup(self, patches)
+        connections = [
+            (c["source"]["name"], self.name) for c in patches
+        ]
+        sequencer.register(self, connections=connections)
 
     def merge_params_with_default(self, params):
         full_params = deepcopy(self.default_params)

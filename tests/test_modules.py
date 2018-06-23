@@ -38,7 +38,7 @@ def test_resolve_step():
 
 def test_resolve_step_with_input():
     s = Sequencer()
-    s.register(MyInputModule(sequencer=s))
+    MyInputModule(sequencer=s)
     m = MyModule(
         sequencer=s, patches=[{"source": {"name": "myinputmodule"}, "dest": "add_num"}]
     )
