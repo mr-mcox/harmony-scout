@@ -5,16 +5,16 @@ from scout import modules
 def build_modules(configs, sequencer):
     for config in configs:
         module_type = config["type"]
-        module = None
+        module_class = None
         if module_type == "rhythm":
-            module = modules.Rhythm()
+            module_class = modules.Rhythm
         elif module_type == "sequencer":
-            module = modules.Sequencer()
+            module_class = modules.Sequencer
         elif module_type == "consonances":
-            module = modules.Consonances()
+            module_class = modules.Consonances
         else:
             raise ValueError(f"Module type {module_type} unknown")
-        sequencer.register(module)
+        sequencer.register(module_class(sequencer=sequencer))
 
 
 @attr.s

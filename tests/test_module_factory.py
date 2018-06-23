@@ -15,7 +15,14 @@ class MockSeq:
         pass
 
 
-@pytest.mark.parametrize("module_type,expected_class", [("rhythm", modules.Rhythm), ('sequencer', modules.Sequencer), ('consonances', modules.Consonances)])
+@pytest.mark.parametrize(
+    "module_type,expected_class",
+    [
+        ("rhythm", modules.Rhythm),
+        ("sequencer", modules.Sequencer),
+        ("consonances", modules.Consonances),
+    ],
+)
 def test_expected_type(module_type, expected_class):
     config = [{"type": module_type}]
     s = MockSeq()
