@@ -34,11 +34,12 @@ def graph_parents(graph, child):
     return {p for p, c in graph if c == child}
 
 
-@attr.s
 class Sequencer:
-    length = attr.ib(default=0)
-    modules = attr.ib(default=dict())
-    _links = attr.ib(default=set())
+
+    def __init__(self, length=0):
+        self.length = length
+        self.modules = dict()
+        self._links = set()
 
     def register(self, module, connections=None):
         if module.name in self.modules:

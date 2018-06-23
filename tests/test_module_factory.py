@@ -21,7 +21,7 @@ def test_expected_type(module_type, expected_class):
 
 
 def test_register_with_connection():
-    config = [{"type": "rhythm", "patches": [{"source": {"name": "upstream"}}]}]
+    config = [{"type": "rhythm", "patches": [{"source": {"name": "upstream"}, 'dest':'input'}]}]
     s = Sequencer()
     with patch.object(Sequencer, "connect") as mock_connect:
         build_modules(config, sequencer=s)
