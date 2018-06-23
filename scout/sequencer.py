@@ -1,5 +1,6 @@
 import attr
 from scout import modules
+from copy import deepcopy
 
 
 def build_modules(configs, sequencer):
@@ -25,10 +26,19 @@ def build_modules(configs, sequencer):
         sequencer.register(module, connections=connections)
 
 
+def graph_children(graph, parent):
+    return {c for p, c in graph if p == parent}
+
+
+def graph_parents(graph, child):
+    return {p for p, c in graph if c == child}
+
+
 @attr.s
 class Sequencer:
     length = attr.ib(default=0)
     modules = attr.ib(default=dict())
+    _links = attr.ib(default=set())
 
     def register(self, module, connections=None):
         if module.name in self.modules:
@@ -38,8 +48,36 @@ class Sequencer:
         for connection in connections:
             self.connect(*connection)
 
-    def connect(self, upstream, downstream):
-        pass
+    def connect(self, parent, child):
+        self._links.add((parent, child))
 
     def lookup_value(self, module_name, port):
         return self.modules[module_name].output[port]
+
+    def eval_order(self):
+        # Kahn's algorithm for topological sorting
+        graph = deepcopy(self._links)
+        no_parent = set()
+        order = list()
+        for i in range(len(self.chord_templates)):
+            if len(graph_parents(graph, i)) == 0:
+                no_parent.add(i)
+        while len(no_parent) > 0:
+            n = no_parent.pop()
+            order.append(n)
+            for child in graph_children(graph, n):
+                graph.remove((n, child))
+                if len(graph_parents(graph, child)) == 0:
+                    no_parent.add(child)
+        if len(graph) > 0:
+            ValueError("Values remained on graph. It cannot be a DAG")
+        return order
+
+    def sequence(self):
+        eval_order = self.eval_order()
+        for i in range(self.length):
+            self.sequence_step(eval_order)
+
+    def sequence_step(self, eval_order):
+        for module_name in eval_order:
+            self.modules[module_name].resolve_step()
