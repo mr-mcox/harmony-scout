@@ -10,8 +10,8 @@ def build_modules(configs, sequencer):
         module_class = None
         if module_type == "rhythm":
             module_class = modules.Rhythm
-        elif module_type == "sequencer":
-            module_class = modules.Sequencer
+        elif module_type == "seq":
+            module_class = modules.Seq
         elif module_type == "consonances":
             module_class = modules.Consonances
         else:

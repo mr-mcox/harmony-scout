@@ -9,7 +9,7 @@ from scout.sequencer import Sequencer
     "module_type,expected_class",
     [
         ("rhythm", modules.Rhythm),
-        ("sequencer", modules.Sequencer),
+        ("seq", modules.Seq),
         ("consonances", modules.Consonances),
     ],
 )

@@ -29,6 +29,9 @@ class InputLookup:
         else:
             return self.default_inputs[item]
 
+    def __setitem__(self, key, value):
+        self.default_inputs[key] = value
+
 
 class Module:
     default_params = {}
@@ -121,8 +124,35 @@ class Rhythm(Module):
         self.i += 1
 
 
-class Sequencer(Module):
-    pass
+class Seq(Module):
+    """Advance sequence on trigger
+
+    Parameters
+    ----------
+    states: list of float
+        Outputs to cycle through
+
+    Returns
+    -------
+    out: float
+        Current state
+
+    """
+
+    default_params = {"states": [0], "trigger": 0}
+    input_parameter_map = {"trigger": "trigger"}
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.i = 0
+        self.output["out"] = self.params["states"][0]
+
+    def update_outputs(self):
+        states = self.params["states"]
+        if self.input["trigger"] == 1:
+            out = states[self.i % len(states)]
+            self.i += 1
+            self.output["out"] = out
 
 
 class Consonances(Module):
