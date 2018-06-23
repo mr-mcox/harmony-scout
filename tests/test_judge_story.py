@@ -35,6 +35,6 @@ def test_story(judge_configs):
     # It has a rule that evaluates a phenotype as expected
     good_phenotype = np.array([0, 1, 7, 3])
     bad_phenotype = np.array([3, 0, 1, 7])
-    judge = s.judges["pitch_class"][0]
+    judge = s.for_level["pitch_class"][0]
     assert judge.evaluate(good_phenotype) == 2
     assert judge.evaluate(bad_phenotype) == 0

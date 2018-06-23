@@ -90,7 +90,22 @@ class Judge(Module):
 
 
 class Rhythm(Module):
-    pass
+    default_output = {"out": 1}
+    default_params = {"durations": [1]}
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        durations = self.params["durations"]
+        activations = list()
+        for duration in durations:
+            activations.extend([1] + [0] * (duration - 1))
+        self.activations = activations
+        self.i = 0
+
+    def update_outputs(self):
+        out = self.activations[self.i % len(self.activations)]
+        self.output["out"] = out
+        self.i += 1
 
 
 class Sequencer(Module):
