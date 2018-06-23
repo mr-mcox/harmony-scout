@@ -1,4 +1,5 @@
 from copy import deepcopy
+import numpy as np
 from collections import namedtuple
 
 PatchConfig = namedtuple("PatchConfig", ["module", "port", "multiplier"])
@@ -32,6 +33,7 @@ class InputLookup:
 class Module:
     default_params = {}
     default_output = {}
+    level = ""
     input_parameter_map = {}
 
     def __init__(self, sequencer, name=None, params=None, patches=None):
@@ -41,9 +43,7 @@ class Module:
         self.params = self.merge_params_with_default(params)
         self.output = deepcopy(self.default_output)
         self.input = InputLookup(self, patches)
-        connections = [
-            (c["source"]["name"], self.name) for c in patches
-        ]
+        connections = [(c["source"]["name"], self.name) for c in patches]
         sequencer.register(self, connections=connections)
 
     def merge_params_with_default(self, params):
@@ -65,6 +65,28 @@ class Module:
     def name(self):
         if not self._name:
             return type(self).__name__.lower()
+
+
+class Judge(Module):
+    def __init__(self, **kwargs):
+        self.array_output = dict()
+        super().__init__(**kwargs)
+
+    def array_vals(self):
+        return dict()
+
+    def resolve_step(self):
+        super().resolve_step()
+        array_output = self.array_output
+        for k, v in self.array_vals().items():
+            if k in array_output:
+                prev_array = array_output[k]
+                new_array = np.array([v])
+                array = np.concatenate((prev_array, new_array))
+                array_output[k] = array
+            else:
+                array_output[k] = np.array([v])
+        self.array_output = array_output
 
 
 class Rhythm(Module):

@@ -10,14 +10,15 @@ def judge_configs():
         {
             "type": "sequencer",
             "params": {"states": [0, 1]},
-            "patches": [
-                {"source": {"name": "rhythm", "port": "trigger"}, "dest": "gate"}
-            ],
+            "patches": [{"source": {"name": "rhythm"}, "dest": "gate"}],
         },
         {
             "type": "consonances",
             "params": {"class_value": {0: 1, 7: 0.5}},
-            "patches": [{"source": {"name": "sequencer"}, "dest": "weight"}],
+            "patches": [
+                {"source": {"name": "sequencer"}, "dest": "weight"},
+                {"source": {"name": "rhythm"}, "dest": "gate"},
+            ],
         },
     ]
     return defs

@@ -1,6 +1,7 @@
 import attr
 from scout import modules
 from copy import deepcopy
+from collections import defaultdict
 
 
 def build_modules(configs, sequencer):
@@ -31,16 +32,18 @@ def graph_parents(graph, child):
 
 
 class Sequencer:
-
     def __init__(self, length=0):
         self.length = length
         self.modules = dict()
+        self.for_level = defaultdict(list)
         self._links = set()
 
     def register(self, module, connections=None):
         if module.name in self.modules:
             raise ValueError(f"Module name {module.name} has already been registered")
         self.modules[module.name] = module
+        if module.level:
+            self.for_level[module.level].append(module)
         connections = connections if connections else {}
         for connection in connections:
             self.connect(*connection)
