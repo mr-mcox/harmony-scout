@@ -5,6 +5,9 @@ from numpy.testing import assert_array_equal
 
 
 class MyJudge(Judge):
+    default_params = {"trigger": 1}
+    input_parameters = ["trigger"]
+
     def array_vals(self):
         return {"out": (0, 1)}
 

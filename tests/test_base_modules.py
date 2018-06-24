@@ -4,7 +4,7 @@ from scout.sequencer import Sequencer
 
 class MyModule(Module):
     default_params = {"default": "default", "override": "old", "add_num": 1}
-    input_parameter_map = {"add_num": "add_num"}
+    input_parameters = ["add_num"]
     default_output = {"out": 0}
 
     def update_outputs(self):

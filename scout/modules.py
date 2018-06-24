@@ -9,7 +9,7 @@ class InputLookup:
     def __init__(self, module, patch_config):
         self.sequencer = module.sequencer
         self.default_inputs = {
-            k: module.params[v] for k, v in module.input_parameter_map.items()
+            item: module.params[item] for item in module.input_parameters
         }
         patch_lookup = dict()
         patch_config = patch_config if patch_config else list()
@@ -34,10 +34,10 @@ class InputLookup:
 
 
 class Module:
-    default_params = {}
-    default_output = {}
+    default_params = dict()
+    default_output = dict()
     level = ""
-    input_parameter_map = {}
+    input_parameters = list()
 
     def __init__(self, sequencer, name=None, params=None, patches=None):
         patches = patches if patches else list()
@@ -80,6 +80,8 @@ class Judge(Module):
 
     def resolve_step(self):
         super().resolve_step()
+        if self.input["trigger"] != 1:
+            return
         array_output = self.array_output
         for k, v in self.array_vals().items():
             if k in array_output:
@@ -90,6 +92,9 @@ class Judge(Module):
             else:
                 array_output[k] = np.array([v])
         self.array_output = array_output
+
+    def evaluate(self, phenotype):
+        return 0
 
 
 class Rhythm(Module):
@@ -140,7 +145,7 @@ class Seq(Module):
     """
 
     default_params = {"states": [0], "trigger": 0}
-    input_parameter_map = {"trigger": "trigger"}
+    input_parameters = ["trigger"]
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -155,5 +160,41 @@ class Seq(Module):
             self.output["out"] = out
 
 
-class Consonances(Module):
-    pass
+class Consonances(Judge):
+    level = "pitch_class"
+    default_params = {"class_value": list(), "trigger": 0}
+    input_parameters = ["trigger"]
+
+    def legal_pitch_vals(self):
+        class_vals = self.params["class_value"]
+        legal_cv = list()
+        for c, v in class_vals:
+            legal_cv.append((c, v))
+            c2 = c - 12
+            while c2 >= -12:
+                legal_cv.append((c2, v))
+                c2 += -12
+            c2 = c + 12
+            while c2 <= 12:
+                legal_cv.append((c2, v))
+                c2 += 12
+        return legal_cv
+
+    def array_vals(self):
+        class_vals = self.legal_pitch_vals()
+        return {
+            "pitches": [c[0] for c in class_vals],
+            "values": [c[1] for c in class_vals],
+            "weight": self.input["weight"],
+        }
+
+    def evaluate(self, pheno):
+        pitches = self.array_output["pitches"]
+        values = self.array_output["values"]
+        weight = self.array_output["weight"]
+
+        score = 0
+        for i in range(pitches.shape[1]):
+            matches = pheno == pitches[:, i]
+            score += (matches * values[:, i] * weight).sum()
+        return score

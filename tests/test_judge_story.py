@@ -8,16 +8,16 @@ def judge_configs():
     defs = [
         {"type": "rhythm", "params": {"durations": [3, 1]}},
         {
-            "type": "sequencer",
+            "type": "seq",
             "params": {"states": [0, 1]},
-            "patches": [{"source": {"name": "rhythm"}, "dest": "gate"}],
+            "patches": [{"source": {"name": "rhythm"}, "dest": "trigger"}],
         },
         {
             "type": "consonances",
-            "params": {"class_value": {0: 1, 7: 0.5}},
+            "params": {"class_value": [(0, 1), (7, 0.5)]},
             "patches": [
-                {"source": {"name": "sequencer"}, "dest": "weight"},
-                {"source": {"name": "rhythm"}, "dest": "gate"},
+                {"source": {"name": "seq"}, "dest": "weight"},
+                {"source": {"name": "rhythm"}, "dest": "trigger"},
             ],
         },
     ]
@@ -33,8 +33,8 @@ def test_story(judge_configs):
     # When the sequencer is run
     s.sequence()
     # It has a rule that evaluates a phenotype as expected
-    good_phenotype = np.array([0, 1, 7, 3])
-    bad_phenotype = np.array([3, 0, 1, 7])
+    good_phenotype = np.array([3, 0, 1, 7])
+    bad_phenotype = np.array([0, 1, 7, 3])
     judge = s.for_level["pitch_class"][0]
-    assert judge.evaluate(good_phenotype) == 2
+    assert judge.evaluate(good_phenotype) == 1.5
     assert judge.evaluate(bad_phenotype) == 0

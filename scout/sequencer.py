@@ -59,9 +59,9 @@ class Sequencer:
         graph = deepcopy(self._links)
         no_parent = set()
         order = list()
-        for i in range(len(self.chord_templates)):
-            if len(graph_parents(graph, i)) == 0:
-                no_parent.add(i)
+        for mod_name in self.modules.keys():
+            if len(graph_parents(graph, mod_name)) == 0:
+                no_parent.add(mod_name)
         while len(no_parent) > 0:
             n = no_parent.pop()
             order.append(n)
