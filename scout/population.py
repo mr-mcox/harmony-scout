@@ -27,7 +27,15 @@ class PitchClassCreature(Creature):
     @staticmethod
     def conform_phenotype(gene, valid_pheno, octave_steps=12):
         gene_mult = gene * octave_steps
-        diff = gene_mult - np.expand_dims(valid_pheno, axis=1).repeat(2, axis=1)
+        diff = gene_mult - np.expand_dims(valid_pheno, axis=1).repeat(
+            gene.shape[0], axis=1
+        )
         dist = np.sum(np.square(diff), axis=2)
         closest = dist.argmin(axis=0)
         return valid_pheno[closest, :]
+
+    @staticmethod
+    def pitch_classes_with_pitch(pitches, n=3):
+        pitch_list = [pitches for i in range(n)]
+        combos = np.array(np.meshgrid(*pitch_list)).reshape(-1, n)
+        return np.unique(combos, axis=0)

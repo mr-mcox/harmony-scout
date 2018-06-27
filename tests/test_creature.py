@@ -27,5 +27,13 @@ def test_conform_phenotype():
     gene = np.array([[0.9, 1.1, 0.9], [0.1, 0.9, 0.8]]) / 12
     c = PitchClassCreature()
     res = c.conform_phenotype(gene, valid_pheno)
-    exp = np.array([[1,1, 1], [0, 1, 1]])
+    exp = np.array([[1, 1, 1], [0, 1, 1]])
     assert_almost_equal(res, exp)
+
+
+def test_chords_with_pitches():
+    pitches = [0, 5, 7]
+    c = PitchClassCreature()
+    res = c.pitch_classes_with_pitch(pitches, n=2)
+    assert res.shape[1] == 2
+    assert len(np.unique(res, axis=0)) == len(res)
