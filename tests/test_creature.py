@@ -1,4 +1,4 @@
-from scout.population import PitchClassCreature
+from scout.population import PitchClassCreature, pitch_classes_with_pitch
 import pytest
 import numpy as np
 from numpy.testing import assert_almost_equal
@@ -33,7 +33,6 @@ def test_conform_phenotype():
 
 def test_chords_with_pitches():
     pitches = [0, 5, 7]
-    c = PitchClassCreature()
-    res = c.pitch_classes_with_pitch(pitches, n=2)
+    res = pitch_classes_with_pitch(pitches, n=2)
     assert res.shape[1] == 2
     assert len(np.unique(res, axis=0)) == len(res)
