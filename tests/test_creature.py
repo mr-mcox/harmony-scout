@@ -20,3 +20,12 @@ def test_conform_genotype(before, after):
     res = c.conform_genotype(gene)
     exp = np.array([after])
     assert_almost_equal(res, exp)
+
+
+def test_conform_phenotype():
+    valid_pheno = np.array([[0, 1, 1], [1, 1, 1], [2, 2, 2], [2, 2, 3]])
+    gene = np.array([[0.9, 1.1, 0.9], [0.1, 0.9, 0.8]]) / 12
+    c = PitchClassCreature()
+    res = c.conform_phenotype(gene, valid_pheno)
+    exp = np.array([[1,1, 1], [0, 1, 1]])
+    assert_almost_equal(res, exp)

@@ -6,7 +6,6 @@ class Creature:
 
 
 class PitchClassCreature(Creature):
-
     @staticmethod
     def conform_genotype(gene):
         gene = np.mod(gene, 1)
@@ -24,3 +23,11 @@ class PitchClassCreature(Creature):
             needs_shift = gene.sum(axis=1) >= 1
             n_shifts += 1
         return gene
+
+    @staticmethod
+    def conform_phenotype(gene, valid_pheno, octave_steps=12):
+        gene_mult = gene * octave_steps
+        diff = gene_mult - np.expand_dims(valid_pheno, axis=1).repeat(2, axis=1)
+        dist = np.sum(np.square(diff), axis=2)
+        closest = dist.argmin(axis=0)
+        return valid_pheno[closest, :]
