@@ -1,5 +1,5 @@
 import numpy as np
-
+import itertools
 
 class Creature:
     pass
@@ -25,12 +25,14 @@ def conform_normalized_pitch_class(gene):
 
 def pitch_classes_with_pitch(pitches, n=3, octave_steps=12):
     pitch_list = [pitches for i in range(n)]
-    combos = np.array(np.meshgrid(*pitch_list)).reshape(-1, n)
-    unique = np.unique(combos, axis=0)
-    scaled = unique / octave_steps
+    combos = np.array([x for x in itertools.product(*pitch_list)])
+    assert combos.shape[0] == len(pitches) ** n
+    scaled = combos / octave_steps
     conformed = conform_normalized_pitch_class(scaled)
     float_pitch = conformed * octave_steps
-    return float_pitch.round().astype(int)
+    int_pitch = float_pitch.round().astype(int)
+    unique = np.unique(int_pitch, axis=0)
+    return unique
 
 
 class PitchClassCreature(Creature):

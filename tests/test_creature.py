@@ -32,7 +32,11 @@ def test_conform_phenotype():
 
 
 def test_chords_with_pitches():
-    pitches = [0, 5, 7]
+    pitches = [0, 2, 5, 7]
     res = pitch_classes_with_pitch(pitches, n=2)
     assert res.shape[1] == 2
-    assert len(np.unique(res, axis=0)) == len(res)
+    assert len(np.unique(res, axis=0)) == res.shape[0]
+    chords = set()
+    for i in range(res.shape[0]):
+        chords.add(tuple(res[i].tolist()))
+    assert (0, 5) in chords
