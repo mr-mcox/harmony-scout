@@ -2,6 +2,7 @@ from scout.population import PitchClassCreature, pitch_classes_with_pitch
 import pytest
 import numpy as np
 from numpy.testing import assert_almost_equal
+from numpy.random import RandomState
 
 
 @pytest.mark.parametrize(
@@ -40,3 +41,39 @@ def test_chords_with_pitches():
     for i in range(res.shape[0]):
         chords.add(tuple(res[i].tolist()))
     assert (0, 5) in chords
+
+
+def test_pitch_class_from_random():
+    rand = RandomState(42)
+    c = PitchClassCreature(random_state=rand)
+    c.from_random((10, 3))
+    assert c.genotype.shape == (10, 3)
+
+
+def test_pitch_class_from_mutation():
+    rand = RandomState(43)
+    c1 = PitchClassCreature(random_state=rand)
+    c1.from_random((20, 3))
+    c2 = PitchClassCreature(random_state=rand)
+    c2.from_mutation(c1.genotype)
+    diff = np.abs(c1.genotype - c2.genotype).sum()
+    assert 0 < diff < 1
+
+
+def test_pitch_class_from_crossover():
+    rand = RandomState(43)
+    c1 = PitchClassCreature(random_state=rand)
+    c1.from_random((20, 3))
+    c2 = PitchClassCreature(random_state=rand)
+    c2.from_random((20, 3))
+    c3 = PitchClassCreature(random_state=rand)
+    c3.from_crossover([c1.genotype, c2.genotype])
+    diff = np.stack(
+        [
+            np.abs(c3.genotype - c1.genotype).sum(axis=1),
+            np.abs(c3.genotype - c2.genotype).sum(axis=1),
+        ],
+        axis=1,
+    )
+    assert (diff.max(axis=0) > 0).all()  # Don't just match a single one
+    assert (diff.min(axis=1) == 0).all()
