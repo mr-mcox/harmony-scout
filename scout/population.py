@@ -3,6 +3,30 @@ from numpy.random import RandomState
 import itertools
 
 
+class Population:
+    def __init__(self, creature_class, evolve_params, creature_params=None):
+        self.creature_class = creature_class
+        self.creature_params = dict() if creature_params is None else creature_params
+        self.evolve_params = evolve_params
+        self.creatures = list()
+
+    def fill(self):
+        shape = self.creature_params["random"]["shape"]
+        for i in range(self.evolve_params["fill"]["target_n"]):
+            c = self.creature_class()
+            c.from_random(shape)
+            self.creatures.append(c)
+
+    def cull(self):
+        creatures = self.creatures
+        creatures.sort(key=lambda c: c.fitness())
+        target_n = self.evolve_params["cull"]["target_n"]
+        self.creatures = creatures[:target_n]
+
+    def evolve(self):
+        pass
+
+
 class Creature:
     def __init__(self, judges=None, random_state=None):
         self.judges = list() if judges is None else judges
@@ -16,6 +40,15 @@ class Creature:
         for judge in self.judges:
             score += judge.evaluate(self.phenotype)
         return score
+
+    def from_random(self, shape):
+        return np.zeros(shape)
+
+    def from_mutation(self, gene):
+        return gene
+
+    def from_crossover(self, genes):
+        return genes[0]
 
     def conform_phenotype(self, gene):
         return gene
