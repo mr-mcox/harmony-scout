@@ -4,7 +4,38 @@ import itertools
 
 
 class Creature:
-    pass
+    def __init__(self, judges=None, random_state=None):
+        self.judges = list() if judges is None else judges
+        self.random_state = RandomState() if random_state is None else random_state
+        self._proto_gene = None
+        self._genotype = None
+        self._phenotype = None
+
+    def fitness(self):
+        score = 0
+        for judge in self.judges:
+            score += judge.evaluate(self.phenotype)
+        return score
+
+    def conform_phenotype(self, gene):
+        return gene
+
+    def conform_genotype(self, gene):
+        return gene
+
+    @property
+    def genotype(self):
+        if self._genotype is None:
+            if self._proto_gene is None:
+                raise ValueError("No gene creation method has been called")
+            self._genotype = self.conform_genotype(self._proto_gene)
+        return self._genotype
+
+    @property
+    def phenotype(self):
+        if self._phenotype is None:
+            self._phenotype = self.conform_phenotype(self.genotype)
+        return self._phenotype
 
 
 def conform_normalized_pitch_class(gene):
@@ -38,10 +69,9 @@ def pitch_classes_with_pitch(pitches, n=3, octave_steps=12):
 
 
 class PitchClassCreature(Creature):
-    def __init__(self, random_state=None):
-        self.random_state = RandomState() if random_state is None else random_state
-        self._proto_gene = None
-        self._genotype = None
+    def __init__(self, valid_phenotypes=None, **kwargs):
+        self.valid_phenotypes = valid_phenotypes
+        super().__init__(**kwargs)
 
     def check_proto_gene_empty(self):
         if self._proto_gene is not None:
@@ -82,20 +112,11 @@ class PitchClassCreature(Creature):
         gene_parts.append(genes[last_gene][last_idx:])
         self._proto_gene = np.concatenate(gene_parts)
 
-    @property
-    def genotype(self):
-        if self._genotype is None:
-            if self._proto_gene is None:
-                raise ValueError("No gene creation method has been called")
-            self._genotype = self.conform_genotype(self._proto_gene)
-        return self._genotype
-
-    @staticmethod
-    def conform_genotype(gene):
+    def conform_genotype(self, gene):
         return conform_normalized_pitch_class(gene)
 
-    @staticmethod
-    def conform_phenotype(gene, valid_pheno, octave_steps=12):
+    def conform_phenotype(self, gene, octave_steps=12):
+        valid_pheno = self.valid_phenotypes
         gene_mult = gene * octave_steps
         diff = gene_mult - np.expand_dims(valid_pheno, axis=1).repeat(
             gene.shape[0], axis=1

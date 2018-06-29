@@ -1,8 +1,9 @@
-from scout.population import PitchClassCreature, pitch_classes_with_pitch
+from scout.population import PitchClassCreature, pitch_classes_with_pitch, Creature
 import pytest
 import numpy as np
 from numpy.testing import assert_almost_equal
 from numpy.random import RandomState
+import attr
 
 
 @pytest.mark.parametrize(
@@ -26,8 +27,8 @@ def test_conform_genotype(before, after):
 def test_conform_phenotype():
     valid_pheno = np.array([[0, 1, 1], [1, 1, 1], [2, 2, 2], [2, 2, 3]])
     gene = np.array([[0.9, 1.1, 0.9], [0.1, 0.9, 0.8]]) / 12
-    c = PitchClassCreature()
-    res = c.conform_phenotype(gene, valid_pheno)
+    c = PitchClassCreature(valid_phenotypes=valid_pheno)
+    res = c.conform_phenotype(gene)
     exp = np.array([[1, 1, 1], [0, 1, 1]])
     assert_almost_equal(res, exp)
 
@@ -77,3 +78,19 @@ def test_pitch_class_from_crossover():
     )
     assert (diff.max(axis=0) > 0).all()  # Don't just match a single one
     assert (diff.min(axis=1) == 0).all()
+
+
+@attr.s
+class PartialJudge:
+    score = attr.ib(default=1)
+
+    def evaluate(self, phenotype):
+        return self.score
+
+
+def test_creature_fitness():
+    j1 = PartialJudge(score=1)
+    j2 = PartialJudge(score=0.5)
+    c = Creature(judges=[j1, j2])
+    c._proto_gene = 0  # To not trip the error
+    assert c.fitness() == 1.5
