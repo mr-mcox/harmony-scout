@@ -6,15 +6,21 @@ import itertools
 class Population:
     def __init__(self, creature_class, evolve_params, creature_params=None):
         self.creature_class = creature_class
-        self.creature_params = dict() if creature_params is None else creature_params
-        self.evolve_params = evolve_params
+        c_params = {"gene_shape": (1, 1)}
+        if creature_params is not None:
+            c_params.update(creature_params)
+        self.creature_params = c_params
+
+        e_params = {"fill": {"target_n": 10}, "cull": {"target_n": 5}}
+        if evolve_params is not None:
+            e_params.update(evolve_params)
+        self.evolve_params = e_params
         self.creatures = list()
 
     def fill(self):
-        shape = self.creature_params["random"]["shape"]
         for i in range(self.evolve_params["fill"]["target_n"]):
-            c = self.creature_class()
-            c.from_random(shape)
+            c = self.creature_class(**self.creature_params)
+            c.from_random()
             self.creatures.append(c)
 
     def cull(self):
@@ -26,23 +32,31 @@ class Population:
     def evolve(self):
         pass
 
+    def fitness_ptile(self, ptile):
+        scores = [c.fitness() for c in self.creatures]
+        return np.percentile(scores, ptile * 100)
+
 
 class Creature:
-    def __init__(self, judges=None, random_state=None):
+    def __init__(self, judges=None, random_state=None, gene_shape=None):
         self.judges = list() if judges is None else judges
         self.random_state = RandomState() if random_state is None else random_state
+        self.gene_shape = (1, 1) if gene_shape is None else gene_shape
         self._proto_gene = None
         self._genotype = None
         self._phenotype = None
+        self._fitness = None
 
     def fitness(self):
-        score = 0
-        for judge in self.judges:
-            score += judge.evaluate(self.phenotype)
-        return score
+        if self._fitness is None:
+            score = 0
+            for judge in self.judges:
+                score += judge.evaluate(self.phenotype)
+            self._fitness = score
+        return self._fitness
 
-    def from_random(self, shape):
-        return np.zeros(shape)
+    def from_random(self):
+        return np.zeros(self.gene_shape)
 
     def from_mutation(self, gene):
         return gene
@@ -110,7 +124,8 @@ class PitchClassCreature(Creature):
         if self._proto_gene is not None:
             raise ValueError("Proto gene was already set")
 
-    def from_random(self, shape):
+    def from_random(self):
+        shape = self.gene_shape
         rand = self.random_state
         self.check_proto_gene_empty()
         gene = rand.uniform(size=shape)
