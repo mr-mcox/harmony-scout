@@ -4,6 +4,7 @@ from scout.sequencer import Sequencer
 import pytest
 from random import random
 import numpy as np
+from numpy.random import RandomState
 
 
 @pytest.fixture
@@ -53,11 +54,24 @@ def test_percentile_fitness():
 
 
 class SelfImprovingCreature(Creature):
-    def from_random(self, shape):
-        self._phenotype = 0
+    def from_random(self):
+        self._genotype = [0]
 
     def from_mutation(self, gene):
-        self._phenotype = 1
+        self._genotype = [1]
 
     def from_crossover(self, genes):
-        self._phenotype = 2
+        self._genotype = [2]
+
+@pytest.mark.xfail
+def test_evolve_improves():
+    random_state = RandomState()
+    evolve_params = {'fill': {'target_n': 20},  'cull': {'target_n': 10}, 'evolve': {'target_n': 20, 'origin_probs':[1, 0,0]}}
+    j = SumJudge(sequencer=Sequencer())
+    creature_params = {'judges': [j]}
+    p = Population(creature_class=SelfImprovingCreature, evolve_params=evolve_params, creature_params=creature_params, random_state=random_state)
+    p.evolve(to_generation=1)
+    assert p.generations == 1
+    prev_fitness = p.fitness_ptile(0.9)
+    p.evolve(to_generation=2)
+    assert p.fitness_ptile(0.9) > prev_fitness
