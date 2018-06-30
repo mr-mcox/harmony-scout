@@ -5,15 +5,9 @@ from random import choices
 
 
 class Population:
-    def __init__(
-        self, creature_class, evolve_params, creature_params=None, random_state=None
-    ):
+    def __init__(self, creature_factory, evolve_params, random_state=None):
         self.random_state = RandomState() if random_state is None else random_state
-        self.creature_class = creature_class
-        c_params = {"gene_shape": (1, 1)}
-        if creature_params is not None:
-            c_params.update(creature_params)
-        self.creature_params = c_params
+        self.creature_factory = creature_factory
 
         e_params = {"fill": {"target_n": 10}, "cull": {"target_n": 5}}
         if evolve_params is not None:
@@ -24,19 +18,18 @@ class Population:
 
     def fill(self):
         for i in range(self.evolve_params["fill"]["target_n"]):
-            c = self.creature_class(**self.creature_params)
-            c.from_random()
-            self.creatures.append(c)
+            self.creatures.append(self.creature_factory.from_random())
 
     def cull(self):
         creatures = self.creatures
-        creatures.sort(key=lambda c: c.fitness())
+        creatures.sort(key=lambda c: c.fitness(), reverse=True)
         target_n = self.evolve_params["cull"]["target_n"]
         self.creatures = creatures[:target_n]
 
     def evolve(self, to_generation=0):
         evolve_params = self.evolve_params
         gen_types = ["random", "mutate", "crossover"]
+        cf = self.creature_factory
         if len(self.creatures) < evolve_params["cull"]["target_n"]:
             self.fill()
             self.cull()
@@ -48,22 +41,20 @@ class Population:
             for i in range(n_generate):
                 gen_type = choices(
                     gen_types, weights=evolve_params["evolve"]["origin_probs"]
-                )
-                c = self.creature_class(**self.creature_params)
+                )[0]
                 if gen_type == "random":
-                    c.from_random()
+                    new_creatures.append(cf.from_random())
                 elif gen_type == "mutate":
-                    c.from_mutation(creatures[0])
+                    new_creatures.append(cf.from_mutation(creatures[0]))
                 elif gen_type == "crossover":
-                    c.from_crossover(creatures[0:3])
+                    new_creatures.append(cf.from_crossover(creatures[0:3]))
                 else:
                     ValueError(f"{gen_type} is an invalid origin_type")
-                new_creatures.append(c)
             self.creatures = creatures + new_creatures
-            # self.cull()
+            self.cull()
             self.generations += 1
 
-    def fitness_ptile(self, ptile):
+    def fitness_ptile(self, ptile=0.9):
         scores = [c.fitness() for c in self.creatures]
         return np.percentile(scores, ptile * 100)
 
