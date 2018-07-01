@@ -4,8 +4,21 @@ import itertools
 from random import choices
 
 
+def population_factory(
+    population_class, creature_factory, evolve_params=None, random_state=None
+):
+    def build():
+        return population_class(
+            creature_factory=creature_factory,
+            evolve_params=evolve_params,
+            random_state=random_state,
+        )
+
+    return build
+
+
 class Population:
-    def __init__(self, creature_factory, evolve_params, random_state=None):
+    def __init__(self, creature_factory, evolve_params=None, random_state=None):
         self.random_state = RandomState() if random_state is None else random_state
         self.creature_factory = creature_factory
 
@@ -102,11 +115,13 @@ class CreatureFactory:
 
 
 class Creature:
-    def __init__(self, gene, judges=None):
+    def __init__(self, gene, judges=None, population_factory=None):
         self._fitness = None
         self._phenotype = None
         self._genotype = self.conform_genotype(gene)
         self.judges = list() if judges is None else judges
+        self.population_factory = population_factory
+        self.sub_population = None
 
     def fitness(self):
         if self._fitness is None:
@@ -131,6 +146,9 @@ class Creature:
         if self._phenotype is None:
             self._phenotype = self.conform_phenotype(self.genotype)
         return self._phenotype
+
+    def build_sub_population(self):
+        self.sub_population = self.population_factory()
 
 
 def conform_normalized_pitch_class(gene):
