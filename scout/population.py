@@ -7,20 +7,24 @@ from random import choices
 def population_factory(
     population_class, creature_factory, evolve_params=None, random_state=None
 ):
-    def build():
+    def build(parent=None):
         return population_class(
             creature_factory=creature_factory,
             evolve_params=evolve_params,
             random_state=random_state,
+            parent=parent,
         )
 
     return build
 
 
 class Population:
-    def __init__(self, creature_factory, evolve_params=None, random_state=None):
+    def __init__(
+        self, creature_factory, evolve_params=None, random_state=None, parent=None
+    ):
         self.random_state = RandomState() if random_state is None else random_state
         self.creature_factory = creature_factory
+        self.parent = parent
 
         e_params = {
             "fill": {"target_n": 10},
@@ -35,7 +39,7 @@ class Population:
 
     def fill(self):
         for i in range(self.evolve_params["fill"]["target_n"]):
-            self.creatures.append(self.creature_factory.from_random())
+            self.creatures.append(self.creature_factory.from_random(parent=self.parent))
 
     def cull(self):
         creatures = self.creatures
@@ -60,11 +64,15 @@ class Population:
                     gen_types, p=evolve_params["evolve"]["origin_probs"]
                 )
                 if gen_type == "random":
-                    new_creatures.append(cf.from_random())
+                    new_creatures.append(cf.from_random(parent=self.parent))
                 elif gen_type == "mutate":
-                    new_creatures.append(cf.from_mutation(creatures[0]))
+                    new_creatures.append(
+                        cf.from_mutation(creatures[0], parent=self.parent)
+                    )
                 elif gen_type == "crossover":
-                    new_creatures.append(cf.from_crossover(creatures[0:3]))
+                    new_creatures.append(
+                        cf.from_crossover(creatures[0:3], parent=self.parent)
+                    )
                 else:
                     ValueError(f"{gen_type} is an invalid origin_type")
             self.creatures = creatures + new_creatures
@@ -93,7 +101,7 @@ class CreatureFactory:
         self.gene_shape = (1, 1) if gene_shape is None else gene_shape
         self.sub_population_factory = sub_population_factory
 
-    def from_random(self):
+    def from_random(self, parent=None):
         shape = self.gene_shape
         rand = self.random_state
         gene = rand.uniform(size=shape)
@@ -101,9 +109,10 @@ class CreatureFactory:
             gene=gene,
             judges=self.judges,
             population_factory=self.sub_population_factory,
+            parent=parent,
         )
 
-    def from_mutation(self, creature):
+    def from_mutation(self, creature, parent=None):
         gene = creature.genotype
         rand = self.random_state
         shape = gene.shape
@@ -115,9 +124,10 @@ class CreatureFactory:
             gene=mutated_gene,
             judges=self.judges,
             population_factory=self.sub_population_factory,
+            parent=parent,
         )
 
-    def from_crossover(self, creatures):
+    def from_crossover(self, creatures, parent=None):
         genes = [c.genotype for c in creatures]
         rand = self.random_state
         n_crossover = rand.binomial(genes[0].shape[0], 0.1)
@@ -139,17 +149,19 @@ class CreatureFactory:
             gene=crossover_gene,
             judges=self.judges,
             population_factory=self.sub_population_factory,
+            parent=parent,
         )
 
 
 class Creature:
-    def __init__(self, gene, judges=None, population_factory=None):
+    def __init__(self, gene, judges=None, population_factory=None, parent=None):
         self._fitness = None
         self._phenotype = None
         self._genotype = self.conform_genotype(gene)
         self.judges = list() if judges is None else judges
         self.population_factory = population_factory
         self.sub_population = None
+        self.parent = parent
 
     def fitness(self):
         if self._fitness is None:
@@ -177,7 +189,7 @@ class Creature:
 
     def evolve_sub_population(self, to_generation=0):
         if self.population_factory is not None:
-            self.sub_population = self.population_factory()
+            self.sub_population = self.population_factory(parent=self)
             self.sub_population.evolve(to_generation=to_generation)
 
 

@@ -51,13 +51,13 @@ def test_percentile_fitness():
 
 
 class HackedEvolutionCreatureFactory(CreatureFactory):
-    def from_random(self):
+    def from_random(self, parent=None):
         return self.creature_class([0], judges=self.judges)
 
-    def from_mutation(self, gene):
+    def from_mutation(self, gene, parent=None):
         return self.creature_class([1], judges=self.judges)
 
-    def from_crossover(self, genes):
+    def from_crossover(self, genes, parent=None):
         return self.creature_class([2], judges=self.judges)
 
 
@@ -95,3 +95,13 @@ def test_sub_pop_on_evolve():
     p = Population(creature_factory=cf)
     p.evolve(to_generation=1)
     assert p.creatures[0].sub_population.generations == 1
+
+
+def test_sub_population_parent():
+    sub_creature_factory = CreatureFactory(creature_class=Creature)
+    pf = population_factory(Population, creature_factory=sub_creature_factory)
+    cf = CreatureFactory(creature_class=Creature, sub_population_factory=pf)
+    p = Population(creature_factory=cf)
+    p.evolve(to_generation=1)
+    for creature in p.creatures:
+        assert creature.sub_population.creatures[0].parent == creature
