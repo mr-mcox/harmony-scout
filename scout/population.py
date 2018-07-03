@@ -1,7 +1,8 @@
 import numpy as np
 from numpy.random import RandomState
 import itertools
-from random import choices
+from collections import defaultdict
+from math import floor
 
 
 def population_factory(
@@ -67,18 +68,20 @@ class Population:
                 if gen_type == "random":
                     new_creatures.append(cf.from_random(parent=self.parent))
                 elif gen_type == "mutate":
-                    idx = np.floor(rand.uniform(size=1) ** 2 * len(creatures)).astype(int)[0]
+                    idx = np.floor(rand.uniform(size=1) ** 2 * len(creatures)).astype(
+                        int
+                    )[0]
                     new_creatures.append(
                         cf.from_mutation(creatures[idx], parent=self.parent)
                     )
                 elif gen_type == "crossover":
-                    idxs = np.floor(rand.uniform(size=3) ** 2 * len(creatures)).astype(int)
+                    idxs = np.floor(rand.uniform(size=3) ** 2 * len(creatures)).astype(
+                        int
+                    )
                     sources = list()
                     for i in np.nditer(idxs):
                         sources.append(creatures[i])
-                    new_creatures.append(
-                        cf.from_crossover(sources, parent=self.parent)
-                    )
+                    new_creatures.append(cf.from_crossover(sources, parent=self.parent))
                 else:
                     ValueError(f"{gen_type} is an invalid origin_type")
             self.creatures = creatures + new_creatures
@@ -246,3 +249,44 @@ class PitchClassCreature(Creature):
         dist = np.sum(np.square(diff), axis=2)
         closest = dist.argmin(axis=0)
         return valid_pheno[closest, :]
+
+
+class VoicingCreature(Creature):
+    def __init__(
+        self, valid_phenotypes=None, octave_steps=12, start_voice=None, **kwargs
+    ):
+        self.valid_phenotypes = valid_phenotypes
+        self.octave_steps = octave_steps
+        self.voices_for = self.compute_voices_for(valid_phenotypes)
+        self.start_voice = start_voice
+        super().__init__(**kwargs)
+
+    def compute_voices_for(self, pitches):
+        voice_dict = defaultdict(list)
+        octave_steps = self.octave_steps
+        pitch_classes = pitches / octave_steps
+        pitch_classes = conform_normalized_pitch_class(pitch_classes) * octave_steps
+        pitch_classes = pitch_classes.round().astype(int)
+        for i in range(pitches.shape[0]):
+            pitch_class = tuple(pitch_classes[i].tolist())
+            voice_dict[pitch_class].append(pitches[i])
+        for key, values in voice_dict.items():
+            voice_dict[key] = np.stack(values, axis=0)
+        return voice_dict
+
+    def conform_genotype(self, gene):
+        return np.mod(gene, 1)
+
+    def conform_phenotype(self, gene):
+        previous = self.start_voice
+        voices = list()
+        for i in range(self.parent.phenotype.shape[0]):
+            pc_tuple = tuple(self.parent.phenotype[i].tolist())
+            options = self.voices_for[pc_tuple]
+            option_num = floor(gene[i] * len(options))
+            diff = np.square(options - previous).sum(axis=1)
+            idx = np.argsort(diff)[option_num]
+            choice = options[idx]
+            voices.append(choice)
+            previous = choice
+        return np.stack(voices, axis=0)

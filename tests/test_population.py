@@ -1,9 +1,16 @@
-from scout.population import Creature, Population, CreatureFactory, population_factory
+from scout.population import (
+    Creature,
+    Population,
+    CreatureFactory,
+    population_factory,
+    VoicingCreature,
+)
 from scout.modules import Judge
 from scout.sequencer import Sequencer
 import pytest
 import numpy as np
 from numpy.random import RandomState
+from numpy.testing import assert_array_equal
 
 
 @pytest.fixture
@@ -105,3 +112,32 @@ def test_sub_population_parent():
     p.evolve(to_generation=1)
     for creature in p.creatures:
         assert creature.sub_population.creatures[0].parent == creature
+
+
+@pytest.mark.parametrize(
+    "pitches,pitch_class", [([0, 1, 2], [0, 1, 2]), ([60, 61, 62], [0, 1, 2])]
+)
+def test_voicing_creature_voices_for(pitches, pitch_class):
+    valid = np.array([pitches])
+    vc = VoicingCreature(gene=np.array([0]), valid_phenotypes=valid)
+    assert_array_equal(vc.voices_for[tuple(pitch_class)], np.array([pitches]))
+
+
+def test_multiple_voices_for():
+    valid = np.array([[0, 1, 2], [0, 1, 3]])
+    vc = VoicingCreature(gene=np.array([0]), valid_phenotypes=valid)
+    assert_array_equal(vc.voices_for[(0, 1, 2)], np.array([[0, 1, 2]]))
+    assert_array_equal(vc.voices_for[(0, 1, 3)], np.array([[0, 1, 3]]))
+
+
+def test_voicing_creature_phenotype():
+    pc = Creature(np.array([[0, 1, 2], [0, 1, 2]]))
+    valid = np.array([[72, 73, 74], [60, 61, 62], [60, 61, 63], [60, 61, 50]])
+    start_voice = np.array([60, 63, 65])
+    vc = VoicingCreature(
+        gene=np.array([0, 0.5]),
+        valid_phenotypes=valid,
+        parent=pc,
+        start_voice=start_voice,
+    )
+    assert_array_equal(vc.phenotype, np.array([[60, 61, 62], [60, 61, 50]]))
