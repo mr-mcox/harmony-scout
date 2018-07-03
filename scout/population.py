@@ -22,7 +22,11 @@ class Population:
         self.random_state = RandomState() if random_state is None else random_state
         self.creature_factory = creature_factory
 
-        e_params = {"fill": {"target_n": 10}, "cull": {"target_n": 5}}
+        e_params = {
+            "fill": {"target_n": 10},
+            "cull": {"target_n": 5},
+            "evolve": {"target_n": 20, "origin_probs": [0.5, 0.3, 0.2]},
+        }
         if evolve_params is not None:
             e_params.update(evolve_params)
         self.evolve_params = e_params
@@ -41,7 +45,7 @@ class Population:
 
     def evolve(self, to_generation=0):
         evolve_params = self.evolve_params
-        gen_types = ["random", "mutate", "crossover"]
+        gen_types = np.array(["random", "mutate", "crossover"])
         cf = self.creature_factory
         if len(self.creatures) < evolve_params["cull"]["target_n"]:
             self.fill()
@@ -52,9 +56,9 @@ class Population:
             creatures.sort(key=lambda c: c.fitness())
             new_creatures = list()
             for i in range(n_generate):
-                gen_type = choices(
-                    gen_types, weights=evolve_params["evolve"]["origin_probs"]
-                )[0]
+                gen_type = self.random_state.choice(
+                    gen_types, p=evolve_params["evolve"]["origin_probs"]
+                )
                 if gen_type == "random":
                     new_creatures.append(cf.from_random())
                 elif gen_type == "mutate":
@@ -66,6 +70,8 @@ class Population:
             self.creatures = creatures + new_creatures
             self.cull()
             self.generations += 1
+        for creature in self.creatures:
+            creature.evolve_sub_population(to_generation=to_generation)
 
     def fitness_ptile(self, ptile=0.9):
         scores = [c.fitness() for c in self.creatures]
@@ -73,28 +79,46 @@ class Population:
 
 
 class CreatureFactory:
-    def __init__(self, creature_class, random_state=None, gene_shape=None, judges=None):
+    def __init__(
+        self,
+        creature_class,
+        random_state=None,
+        gene_shape=None,
+        judges=None,
+        sub_population_factory=None,
+    ):
         self.creature_class = creature_class
         self.judges = list() if judges is None else judges
         self.random_state = RandomState() if random_state is None else random_state
         self.gene_shape = (1, 1) if gene_shape is None else gene_shape
+        self.sub_population_factory = sub_population_factory
 
     def from_random(self):
         shape = self.gene_shape
         rand = self.random_state
         gene = rand.uniform(size=shape)
-        return self.creature_class(gene=gene, judges=self.judges)
+        return self.creature_class(
+            gene=gene,
+            judges=self.judges,
+            population_factory=self.sub_population_factory,
+        )
 
-    def from_mutation(self, gene):
+    def from_mutation(self, creature):
+        gene = creature.genotype
         rand = self.random_state
         shape = gene.shape
         mutate_at = rand.binomial(1, 0.01, size=shape)
         mutation_amt = rand.normal(scale=0.1, size=shape)
         mutation = mutate_at * mutation_amt
         mutated_gene = gene + mutation
-        return self.creature_class(gene=mutated_gene, judges=self.judges)
+        return self.creature_class(
+            gene=mutated_gene,
+            judges=self.judges,
+            population_factory=self.sub_population_factory,
+        )
 
-    def from_crossover(self, genes):
+    def from_crossover(self, creatures):
+        genes = [c.genotype for c in creatures]
         rand = self.random_state
         n_crossover = rand.binomial(genes[0].shape[0], 0.1)
         crossover_points_float = rand.dirichlet(np.ones(n_crossover))
@@ -111,7 +135,11 @@ class CreatureFactory:
             last_gene = last_gene % len(genes)
         gene_parts.append(genes[last_gene][last_idx:])
         crossover_gene = np.concatenate(gene_parts)
-        return self.creature_class(gene=crossover_gene, judges=self.judges)
+        return self.creature_class(
+            gene=crossover_gene,
+            judges=self.judges,
+            population_factory=self.sub_population_factory,
+        )
 
 
 class Creature:
@@ -147,8 +175,10 @@ class Creature:
             self._phenotype = self.conform_phenotype(self.genotype)
         return self._phenotype
 
-    def build_sub_population(self):
-        self.sub_population = self.population_factory()
+    def evolve_sub_population(self, to_generation=0):
+        if self.population_factory is not None:
+            self.sub_population = self.population_factory()
+            self.sub_population.evolve(to_generation=to_generation)
 
 
 def conform_normalized_pitch_class(gene):

@@ -64,7 +64,7 @@ def test_pitch_class_from_mutation():
         creature_class=PitchClassCreature, random_state=rand, gene_shape=(20, 3)
     )
     c1 = cf.from_random()
-    c2 = cf.from_mutation(c1.genotype)
+    c2 = cf.from_mutation(c1)
     diff = np.abs(c1.genotype - c2.genotype).sum()
     assert 0 < diff < 1
 
@@ -76,7 +76,7 @@ def test_pitch_class_from_crossover():
     )
     c1 = cf.from_random()
     c2 = cf.from_random()
-    c3 = cf.from_crossover([c1.genotype, c2.genotype])
+    c3 = cf.from_crossover([c1, c2])
     diff = np.stack(
         [
             np.abs(c3.genotype - c1.genotype).sum(axis=1),

@@ -62,7 +62,7 @@ class HackedEvolutionCreatureFactory(CreatureFactory):
 
 
 def test_evolve_improves():
-    random_state = RandomState()
+    random_state = RandomState(3842)
     evolve_params = {
         "fill": {"target_n": 20},
         "cull": {"target_n": 10},
@@ -80,9 +80,18 @@ def test_evolve_improves():
     assert p.fitness_ptile(0.5) > prev_fitness
 
 
-def test_build_sub_pop():
+def test_evolve_sub_pop():
     cf = CreatureFactory(creature_class=Creature)
     pf = population_factory(Population, creature_factory=cf)
     c = Creature(gene=[0], population_factory=pf)
-    c.build_sub_population()
+    c.evolve_sub_population()
     assert c.sub_population.generations == 0
+
+
+def test_sub_pop_on_evolve():
+    sub_creature_factory = CreatureFactory(creature_class=Creature)
+    pf = population_factory(Population, creature_factory=sub_creature_factory)
+    cf = CreatureFactory(creature_class=Creature, sub_population_factory=pf)
+    p = Population(creature_factory=cf)
+    p.evolve(to_generation=1)
+    assert p.creatures[0].sub_population.generations == 1
