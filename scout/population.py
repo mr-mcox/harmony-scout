@@ -219,6 +219,12 @@ def conform_normalized_pitch_class(gene):
         n_shifts += 1
     return gene
 
+def normalize_pitch_class( pitches, octave_steps=12):
+    pitch_classes = pitches / octave_steps
+    pitch_classes = conform_normalized_pitch_class(pitch_classes) * octave_steps
+    pitch_classes = pitch_classes.round().astype(int)
+    return pitch_classes
+
 
 def pitch_classes_with_pitch(pitches, n=3, octave_steps=12):
     pitch_list = [pitches for i in range(n)]
@@ -264,15 +270,15 @@ class VoicingCreature(Creature):
     def compute_voices_for(self, pitches):
         voice_dict = defaultdict(list)
         octave_steps = self.octave_steps
-        pitch_classes = pitches / octave_steps
-        pitch_classes = conform_normalized_pitch_class(pitch_classes) * octave_steps
-        pitch_classes = pitch_classes.round().astype(int)
+        pitch_classes = normalize_pitch_class( pitches, octave_steps)
         for i in range(pitches.shape[0]):
             pitch_class = tuple(pitch_classes[i].tolist())
             voice_dict[pitch_class].append(pitches[i])
         for key, values in voice_dict.items():
             voice_dict[key] = np.stack(values, axis=0)
         return voice_dict
+
+
 
     def conform_genotype(self, gene):
         return np.mod(gene, 1)

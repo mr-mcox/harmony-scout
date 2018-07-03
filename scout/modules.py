@@ -1,6 +1,7 @@
 from copy import deepcopy
 import numpy as np
 from collections import namedtuple
+from scout.population import normalize_pitch_class
 
 PatchConfig = namedtuple("PatchConfig", ["module", "port", "multiplier"])
 
@@ -198,3 +199,37 @@ class Consonances(Judge):
             matches = pheno == pitches[:, i]
             score += (matches * values[:, i] * weight).sum()
         return score
+
+
+class AuthenticCadence(Judge):
+    def __init__(self, scale, n=3, octave_steps=12, **kwargs):
+        self.scale = scale
+        self.n = n
+        self.role_ideals = self.construct_ideals()
+        super().__init__(**kwargs)
+
+    def construct_ideals(self):
+        scale = self.scale
+        n = self.n
+        chords = list()
+        for role in range(7):
+            chord = list()
+            for i in range(n):
+                scale_steps = (role + i * 2) % 7
+                chord.append(scale[scale_steps])
+            chords.append(chord)
+        return normalize_pitch_class(np.array(chords))
+
+    def functional_role(self, pitch_classes):
+        ideals_repeat = np.expand_dims(self.role_ideals, axis=1).repeat(
+            pitch_classes.shape[0], axis=1
+        )
+        diff = np.square(pitch_classes - ideals_repeat).sum(axis=2)
+        role = np.argmin(diff, axis=0)
+        ideals = self.role_ideals[role]
+        normalized_pc = pitch_classes / np.linalg.norm(
+            pitch_classes, axis=1, keepdims=True
+        )
+        normalized_ideals = ideals / np.linalg.norm(ideals, axis=1, keepdims=True)
+        strengths = np.dot(normalized_pc, normalized_ideals.T)
+        return np.array(role), np.diag(strengths)
