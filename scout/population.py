@@ -48,6 +48,7 @@ class Population:
         self.creatures = creatures[:target_n]
 
     def evolve(self, to_generation=0):
+        rand = self.random_state
         evolve_params = self.evolve_params
         gen_types = np.array(["random", "mutate", "crossover"])
         cf = self.creature_factory
@@ -60,18 +61,23 @@ class Population:
             creatures.sort(key=lambda c: c.fitness())
             new_creatures = list()
             for i in range(n_generate):
-                gen_type = self.random_state.choice(
+                gen_type = rand.choice(
                     gen_types, p=evolve_params["evolve"]["origin_probs"]
                 )
                 if gen_type == "random":
                     new_creatures.append(cf.from_random(parent=self.parent))
                 elif gen_type == "mutate":
+                    idx = np.floor(rand.uniform(size=1) ** 2 * len(creatures)).astype(int)[0]
                     new_creatures.append(
-                        cf.from_mutation(creatures[0], parent=self.parent)
+                        cf.from_mutation(creatures[idx], parent=self.parent)
                     )
                 elif gen_type == "crossover":
+                    idxs = np.floor(rand.uniform(size=3) ** 2 * len(creatures)).astype(int)
+                    sources = list()
+                    for i in np.nditer(idxs):
+                        sources.append(creatures[i])
                     new_creatures.append(
-                        cf.from_crossover(creatures[0:3], parent=self.parent)
+                        cf.from_crossover(sources, parent=self.parent)
                     )
                 else:
                     ValueError(f"{gen_type} is an invalid origin_type")

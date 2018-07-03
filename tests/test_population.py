@@ -62,7 +62,7 @@ class HackedEvolutionCreatureFactory(CreatureFactory):
 
 
 def test_evolve_improves():
-    random_state = RandomState(3842)
+    random_state = RandomState(842)
     evolve_params = {
         "fill": {"target_n": 20},
         "cull": {"target_n": 10},
