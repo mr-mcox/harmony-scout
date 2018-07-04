@@ -203,8 +203,22 @@ class Consonances(Judge):
 
 class CadenceDetector(Judge):
     level = "pitch_class"
-    default_params = {"weight_authentic": 0, "weight_plagel": 0, "trigger": 0}
-    input_parameters = ["trigger", "weight_authentic", "weight_plagel"]
+    default_params = {
+        "weight_authentic": 0,
+        "weight_plagel": 0,
+        "weight_deceptive": 0,
+        "weight_non_authentic": 0,
+        "weight_ascending": 0,
+        "trigger": 0,
+    }
+    input_parameters = [
+        "trigger",
+        "weight_authentic",
+        "weight_plagel",
+        "weight_deceptive",
+        "weight_non_authentic",
+        "weight_ascending",
+    ]
 
     def __init__(self, scale, n=3, **kwargs):
         self.scale = scale
@@ -264,19 +278,51 @@ class CadenceDetector(Judge):
         return {
             "weight_authentic": self.input["weight_authentic"],
             "weight_plagel": self.input["weight_plagel"],
+            "weight_deceptive": self.input["weight_deceptive"],
+            "weight_non_authentic": self.input["weight_non_authentic"],
+            "weight_ascending": self.input["weight_ascending"],
         }
 
     def evaluate(self, phenotype):
         weight_authentic = self.array_output["weight_authentic"]
         weight_plagel = self.array_output["weight_plagel"]
+        weight_deceptive = self.array_output["weight_deceptive"]
+        weight_non_authentic = self.array_output["weight_non_authentic"]
+        weight_ascending = self.array_output["weight_ascending"]
         role, strength = self.functional_role(phenotype)
         looped_role = np.concatenate([role, np.expand_dims(role[0], axis=1)], axis=0)
         score = 0
-        cadences = {"authentic": {(4, 0), (6, 0)}, "plagel": {(3, 0), (1, 0)}}
+        cadences = {
+            "authentic": {(4, 0), (6, 0)},
+            "plagel": {(3, 0), (1, 0)},
+            "deceptive": {(4, 3), (4, 5)},
+        }
+        cadences['non_authentic'] = cadences['plagel'] | cadences['deceptive']
+        ascending_cadences = self.generate_ascending()
+        cadences['ascending'] = ascending_cadences
+
         for i in range(phenotype.shape[0]):
             movement = (looped_role[i], looped_role[i + 1])
             if movement in cadences["authentic"]:
                 score += weight_authentic[i]
             if movement in cadences["plagel"]:
                 score += weight_plagel[i]
+            if movement in cadences["deceptive"]:
+                score += weight_deceptive[i]
+            if movement in cadences["non_authentic"]:
+                score += weight_non_authentic[i]
+            if movement in cadences["ascending"]:
+                score += weight_ascending[i]
         return score
+
+    @staticmethod
+    def generate_ascending():
+        functions = [0, 5, 3, 1, 6, 4]
+        movements = set()
+        for i, n in enumerate(functions):
+            j = 1
+            while j < len(functions):
+                m = functions[j]
+                movements.add((n, m))
+                j += 1
+        return movements

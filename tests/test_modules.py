@@ -75,6 +75,10 @@ def test_multiple_functional_role():
         ("authentic", [[-1, 2, 7], [0, 4, 7]], 1),
         ("authentic", [[-1, 2, 5], [0, 4, 7]], 1),
         ("plagel", [[-3, 2, 5], [0, 4, 7]], 1),
+        ("deceptive", [[-1, 2, 7], [-3, 0, 5]], 1),
+        ("non_authentic", [[-3, 2, 5], [0, 4, 7]], 1),
+        ("non_authentic", [[-1, 2, 7], [-3, 0, 5]], 1),
+        ("ascending", [[0,4,7], [-1, 2, 7]], 1),
     ],
 )
 def test_evaluate_authentic_cadence(cadence, pitches, expected):
