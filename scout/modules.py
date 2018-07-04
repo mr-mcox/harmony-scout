@@ -205,31 +205,54 @@ class AuthenticCadence(Judge):
     def __init__(self, scale, n=3, octave_steps=12, **kwargs):
         self.scale = scale
         self.n = n
-        self.role_ideals = self.construct_ideals()
+        self.role_num, self.role_ideals = self.construct_ideals()
         super().__init__(**kwargs)
+
+    def scale_steps(self):
+        n = self.n
+        if n < 3:
+            raise ValueError("Functional roles not defined for < 3 note chords")
+        prev = {(0, 2, 4)}
+        current = prev
+        n_notes = 3
+        while n - n_notes > 0:
+            current = set()
+            for base in prev:
+                for note in base:
+                    new = base + (note,)
+                    current.add(new)
+                new = base + (len(base) * 2,)  # #adds next triad
+                current.add(new)
+            n_notes += 1
+        return current
 
     def construct_ideals(self):
         scale = self.scale
         n = self.n
         chords = list()
+        step_list = self.scale_steps()
+        roles = list()
         for role in range(7):
-            chord = list()
-            for i in range(n):
-                scale_steps = (role + i * 2) % 7
-                chord.append(scale[scale_steps])
-            chords.append(chord)
-        return normalize_pitch_class(np.array(chords))
+            for steps in step_list:
+                roles.append(role)
+                chord = list()
+                for step in steps:
+                    scale_steps = (role + step) % 7
+                    chord.append(scale[scale_steps])
+                chords.append(chord)
+        return np.array(roles), normalize_pitch_class(np.array(chords))
 
     def functional_role(self, pitch_classes):
         ideals_repeat = np.expand_dims(self.role_ideals, axis=1).repeat(
             pitch_classes.shape[0], axis=1
         )
         diff = np.square(pitch_classes - ideals_repeat).sum(axis=2)
-        role = np.argmin(diff, axis=0)
-        ideals = self.role_ideals[role]
+        role_idx = np.argmin(diff, axis=0)
+        role_num = self.role_num[role_idx]
+        ideals = self.role_ideals[role_idx]
         normalized_pc = pitch_classes / np.linalg.norm(
             pitch_classes, axis=1, keepdims=True
         )
         normalized_ideals = ideals / np.linalg.norm(ideals, axis=1, keepdims=True)
         strengths = np.dot(normalized_pc, normalized_ideals.T)
-        return np.array(role), np.diag(strengths)
+        return np.array(role_num), np.diag(strengths)

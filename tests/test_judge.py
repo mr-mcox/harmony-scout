@@ -24,11 +24,20 @@ def test_judge_has_array_output():
     assert_array_equal(j.array_output["out"], exp)
 
 
-@pytest.mark.parametrize("pitch_classes,role", [([0, 4, 7], 0), ([-3, 2, 5], 1)])
-def test_functional_role(pitch_classes, role):
-    r = AuthenticCadence(scale=[0, 2, 4, 5, 7, 9, 11], n=3, sequencer=Sequencer())
+@pytest.mark.parametrize(
+    "pitch_classes,n,role",
+    [
+        ([0, 4, 7], 3, 0),
+        ([-3, 2, 5], 3, 1),
+        ([-5, 0, 4, 7], 4, 0),
+        ([-1, 0, 4, 7], 4, 0),
+    ],
+)
+def test_functional_role(pitch_classes, n, role):
+    r = AuthenticCadence(scale=[0, 2, 4, 5, 7, 9, 11], n=n, sequencer=Sequencer())
     roles, strengths = r.functional_role(np.array([pitch_classes]))
     assert roles[0] == role
+    assert abs(strengths[0] - 1) < 0.001
 
 
 def test_strength_lt_1():
