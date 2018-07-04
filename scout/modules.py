@@ -202,7 +202,11 @@ class Consonances(Judge):
 
 
 class CadenceDetector(Judge):
-    def __init__(self, scale, n=3, octave_steps=12, **kwargs):
+    level = "pitch_class"
+    default_params = {"weight_authentic": 0, "weight_plagel": 0, "trigger": 0}
+    input_parameters = ["trigger", "weight_authentic", "weight_plagel"]
+
+    def __init__(self, scale, n=3, **kwargs):
         self.scale = scale
         self.n = n
         self.role_num, self.role_ideals = self.construct_ideals()
@@ -228,7 +232,6 @@ class CadenceDetector(Judge):
 
     def construct_ideals(self):
         scale = self.scale
-        n = self.n
         chords = list()
         step_list = self.scale_steps()
         roles = list()
@@ -256,3 +259,24 @@ class CadenceDetector(Judge):
         normalized_ideals = ideals / np.linalg.norm(ideals, axis=1, keepdims=True)
         strengths = np.dot(normalized_pc, normalized_ideals.T)
         return np.array(role_num), np.diag(strengths)
+
+    def array_vals(self):
+        return {
+            "weight_authentic": self.input["weight_authentic"],
+            "weight_plagel": self.input["weight_plagel"],
+        }
+
+    def evaluate(self, phenotype):
+        weight_authentic = self.array_output["weight_authentic"]
+        weight_plagel = self.array_output["weight_plagel"]
+        role, strength = self.functional_role(phenotype)
+        looped_role = np.concatenate([role, np.expand_dims(role[0], axis=1)], axis=0)
+        score = 0
+        cadences = {"authentic": {(4, 0), (6, 0)}, "plagel": {(3, 0), (1, 0)}}
+        for i in range(phenotype.shape[0]):
+            movement = (looped_role[i], looped_role[i + 1])
+            if movement in cadences["authentic"]:
+                score += weight_authentic[i]
+            if movement in cadences["plagel"]:
+                score += weight_plagel[i]
+        return score

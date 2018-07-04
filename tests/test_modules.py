@@ -67,3 +67,45 @@ def test_multiple_functional_role():
     roles, strengths = r.functional_role(np.array(pitch_classes))
     assert_array_equal(roles, np.array([0, 1]))
     assert_almost_equal(strengths, np.array([1, 1]))
+
+
+@pytest.mark.parametrize(
+    "cadence,pitches,expected",
+    [
+        ("authentic", [[-1, 2, 7], [0, 4, 7]], 1),
+        ("authentic", [[-1, 2, 5], [0, 4, 7]], 1),
+        ("plagel", [[-3, 2, 5], [0, 4, 7]], 1),
+    ],
+)
+def test_evaluate_authentic_cadence(cadence, pitches, expected):
+    m = CadenceDetector(scale=[0, 2, 4, 5, 7, 9, 11], n=3, sequencer=Sequencer())
+    weight_type = f"weight_{cadence}"
+    m.input[weight_type] = 1
+    m.input["trigger"] = 1
+    m.resolve_step()
+    m.input[weight_type] = 0
+    m.resolve_step()
+    pitches = np.array(pitches)
+    assert m.evaluate(pitches) == expected
+
+
+def test_evaluate_cadence_weights():
+    m = CadenceDetector(scale=[0, 2, 4, 5, 7, 9, 11], n=3, sequencer=Sequencer())
+    m.input["weight_authentic"] = 0.5
+    m.input["trigger"] = 1
+    m.resolve_step()
+    m.input["weight_authentic"] = 0
+    m.resolve_step()
+    pitches = np.array([[-1, 2, 7], [0, 4, 7]])
+    assert m.evaluate(pitches) == 0.5
+
+
+def test_evaluate_cadence_loop():
+    m = CadenceDetector(scale=[0, 2, 4, 5, 7, 9, 11], n=3, sequencer=Sequencer())
+    m.input["trigger"] = 1
+    m.input["weight_authentic"] = 0
+    m.resolve_step()
+    m.input["weight_authentic"] = 1
+    m.resolve_step()
+    pitches = np.array([[0, 4, 7], [-1, 2, 7]])
+    assert m.evaluate(pitches) == 1
