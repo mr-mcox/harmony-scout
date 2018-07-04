@@ -201,7 +201,7 @@ class Consonances(Judge):
         return score
 
 
-class AuthenticCadence(Judge):
+class CadenceDetector(Judge):
     def __init__(self, scale, n=3, octave_steps=12, **kwargs):
         self.scale = scale
         self.n = n
