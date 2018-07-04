@@ -3,26 +3,33 @@ from scout.sequencer import Sequencer
 
 
 class MyModule(Module):
-    default_params = {"default": "default", "override": "old", "add_num": 1}
     input_parameters = ["add_num"]
-    default_output = {"out": 0}
+
+    def __init__(self, default="default", override="old", add_num=1, **kwargs):
+        super().__init__(**kwargs)
+        self.default = default
+        self.override = override
+        self.add_num = add_num
+        self.output = {"out": 0}
 
     def update_outputs(self):
         self.output["out"] += self.input["add_num"]
 
 
 class MyInputModule(Module):
-    default_output = {"out": 0.5}
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.output = {"out": 0.5}
 
 
 def test_default_params():
     m = MyModule(sequencer=Sequencer())
-    assert m.params["default"] == "default"
+    assert m.default == "default"
 
 
 def test_update_params():
-    m = MyModule(sequencer=Sequencer(), params={"override": "new"})
-    assert m.params["override"] == "new"
+    m = MyModule(sequencer=Sequencer(), override="new")
+    assert m.override == "new"
 
 
 def test_values():

@@ -6,7 +6,7 @@ from numpy.testing import assert_array_equal, assert_almost_equal
 
 
 def test_rhythm_out():
-    m = Rhythm(sequencer=Sequencer(), params={"durations": [1, 2]})
+    m = Rhythm(sequencer=Sequencer(), durations=[1, 2])
     outs = list()
     for i in range(6):
         m.resolve_step()
@@ -15,7 +15,7 @@ def test_rhythm_out():
 
 
 def test_sequencer_out():
-    m = Seq(sequencer=Sequencer(), params={"states": [0, 1]})
+    m = Seq(sequencer=Sequencer(), states=[0, 1])
     inputs = [1, 0, 1]
     outs = list()
     for i in inputs:
@@ -29,7 +29,7 @@ def test_sequencer_out():
     "pitches, weight, score", [([0, 7], 1, 1.5), ([-12, 0], 1, 2), ([0, 0], 0, 0)]
 )
 def test_consonance_score(pitches, weight, score):
-    m = Consonances(sequencer=Sequencer(), params={"class_value": [(0, 1), (7, 0.5)]})
+    m = Consonances(sequencer=Sequencer(), class_value=[(0, 1), (7, 0.5)])
     m.input["weight"] = weight
     m.input["trigger"] = 1
     m.resolve_step()
@@ -78,7 +78,7 @@ def test_multiple_functional_role():
         ("deceptive", [[-1, 2, 7], [-3, 0, 5]], 1),
         ("non_authentic", [[-3, 2, 5], [0, 4, 7]], 1),
         ("non_authentic", [[-1, 2, 7], [-3, 0, 5]], 1),
-        ("ascending", [[0,4,7], [-1, 2, 7]], 1),
+        ("ascending", [[0, 4, 7], [-1, 2, 7]], 1),
     ],
 )
 def test_evaluate_authentic_cadence(cadence, pitches, expected):

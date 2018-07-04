@@ -10,7 +10,7 @@ class InputLookup:
     def __init__(self, module, patch_config):
         self.sequencer = module.sequencer
         self.default_inputs = {
-            item: module.params[item] for item in module.input_parameters
+            item: getattr(module, item) for item in module.input_parameters
         }
         patch_lookup = dict()
         patch_config = patch_config if patch_config else list()
@@ -35,26 +35,17 @@ class InputLookup:
 
 
 class Module:
-    default_params = dict()
-    default_output = dict()
-    level = ""
     input_parameters = list()
 
-    def __init__(self, sequencer, name=None, params=None, patches=None):
+    def __init__(self, sequencer, name=None, patches=None, level=None):
         patches = patches if patches else list()
         self.sequencer = sequencer
         self._name = name
-        self.params = self.merge_params_with_default(params)
-        self.output = deepcopy(self.default_output)
-        self.input = InputLookup(self, patches)
+        self.output = dict()
+        self._input = None
+        self.patches = patches
         connections = [(c["source"]["name"], self.name) for c in patches]
-        sequencer.register(self, connections=connections)
-
-    def merge_params_with_default(self, params):
-        full_params = deepcopy(self.default_params)
-        if params:
-            full_params.update(params)
-        return full_params
+        sequencer.register(self, connections=connections, level=level)
 
     def update_outputs(self):
         pass
@@ -70,11 +61,17 @@ class Module:
         if not self._name:
             return type(self).__name__.lower()
 
+    @property
+    def input(self):
+        if self._input is None:
+            self._input = InputLookup(self, self.patches)
+        return self._input
+
 
 class Judge(Module):
     def __init__(self, **kwargs):
-        self.array_output = dict()
         super().__init__(**kwargs)
+        self.array_output = dict()
 
     def array_vals(self):
         return dict()
@@ -112,17 +109,15 @@ class Rhythm(Module):
         1 on trigger, 0 otherwise
     """
 
-    default_output = {"out": 1}
-    default_params = {"durations": [1]}
-
-    def __init__(self, **kwargs):
+    def __init__(self, durations=None, **kwargs):
         super().__init__(**kwargs)
-        durations = self.params["durations"]
+        durations = [1] if durations is None else durations
         activations = list()
         for duration in durations:
             activations.extend([1] + [0] * (duration - 1))
         self.activations = activations
         self.i = 0
+        self.output = {"out": 1}
 
     def update_outputs(self):
         out = self.activations[self.i % len(self.activations)]
@@ -145,16 +140,18 @@ class Seq(Module):
 
     """
 
-    default_params = {"states": [0], "trigger": 0}
     input_parameters = ["trigger"]
 
-    def __init__(self, **kwargs):
+    def __init__(self, states=None, trigger=0, **kwargs):
         super().__init__(**kwargs)
+        states = [0] if states is None else states
+        self.states = states
+        self.trigger = trigger
         self.i = 0
-        self.output["out"] = self.params["states"][0]
+        self.output["out"] = self.states[0]
 
     def update_outputs(self):
-        states = self.params["states"]
+        states = self.states
         if self.input["trigger"] == 1:
             out = states[self.i % len(states)]
             self.i += 1
@@ -162,12 +159,15 @@ class Seq(Module):
 
 
 class Consonances(Judge):
-    level = "pitch_class"
-    default_params = {"class_value": list(), "trigger": 0}
     input_parameters = ["trigger"]
 
+    def __init__(self, class_value=None, trigger=0, **kwargs):
+        super().__init__(level="pitch_class", **kwargs)
+        self.class_value = list() if class_value is None else class_value
+        self.trigger = trigger
+
     def legal_pitch_vals(self):
-        class_vals = self.params["class_value"]
+        class_vals = self.class_value
         legal_cv = list()
         for c, v in class_vals:
             legal_cv.append((c, v))
@@ -202,15 +202,6 @@ class Consonances(Judge):
 
 
 class CadenceDetector(Judge):
-    level = "pitch_class"
-    default_params = {
-        "weight_authentic": 0,
-        "weight_plagel": 0,
-        "weight_deceptive": 0,
-        "weight_non_authentic": 0,
-        "weight_ascending": 0,
-        "trigger": 0,
-    }
     input_parameters = [
         "trigger",
         "weight_authentic",
@@ -220,11 +211,28 @@ class CadenceDetector(Judge):
         "weight_ascending",
     ]
 
-    def __init__(self, scale, n=3, **kwargs):
+    def __init__(
+        self,
+        scale,
+        n=3,
+        trigger=0,
+        weight_authentic=0,
+        weight_plagel=0,
+        weight_deceptive=0,
+        weight_non_authentic=0,
+        weight_ascending=0,
+        **kwargs,
+    ):
+        super().__init__(level="pitch_class", **kwargs)
         self.scale = scale
         self.n = n
         self.role_num, self.role_ideals = self.construct_ideals()
-        super().__init__(**kwargs)
+        self.trigger = trigger
+        self.weight_authentic = weight_authentic
+        self.weight_plagel = weight_plagel
+        self.weight_deceptive = weight_deceptive
+        self.weight_non_authentic = weight_non_authentic
+        self.weight_ascending = weight_ascending
 
     def scale_steps(self):
         n = self.n
@@ -297,9 +305,9 @@ class CadenceDetector(Judge):
             "plagel": {(3, 0), (1, 0)},
             "deceptive": {(4, 3), (4, 5)},
         }
-        cadences['non_authentic'] = cadences['plagel'] | cadences['deceptive']
+        cadences["non_authentic"] = cadences["plagel"] | cadences["deceptive"]
         ascending_cadences = self.generate_ascending()
-        cadences['ascending'] = ascending_cadences
+        cadences["ascending"] = ascending_cadences
 
         for i in range(phenotype.shape[0]):
             movement = (looped_role[i], looped_role[i + 1])

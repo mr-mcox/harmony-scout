@@ -16,10 +16,9 @@ def build_modules(configs, sequencer):
             module_class = modules.Consonances
         else:
             raise ValueError(f"Module type {module_type} unknown")
-        module = module_class(
-            sequencer=sequencer,
-            params=config.get("params", {}),
-            patches=config.get("patches", []),
+        additional_params = config.get("params", {})
+        module_class(
+            sequencer=sequencer, patches=config.get("patches", []), **additional_params
         )
 
 
@@ -38,12 +37,12 @@ class Sequencer:
         self.for_level = defaultdict(list)
         self._links = set()
 
-    def register(self, module, connections=None):
+    def register(self, module, connections=None, level=None):
         if module.name in self.modules:
             raise ValueError(f"Module name {module.name} has already been registered")
         self.modules[module.name] = module
-        if module.level:
-            self.for_level[module.level].append(module)
+        if level is not None:
+            self.for_level[level].append(module)
         connections = connections if connections else {}
         for connection in connections:
             self.connect(*connection)
