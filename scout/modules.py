@@ -158,6 +158,24 @@ class Seq(Module):
             self.output["out"] = out
 
 
+class Sawtooth(Module):
+    def __init__(self, period=4, is_ac=True, phase=0, **kwargs):
+        super().__init__(**kwargs)
+        self.output = {"out": -1}
+        self.period = period
+        self.i = 0
+        self.phase = phase
+        self.is_ac = is_ac
+
+    def update_outputs(self):
+        period = self.period
+        out = ((self.phase + self.i) % period) / period
+        if self.is_ac:
+            out = out * 2 - 1
+        self.output["out"] = out
+        self.i += 1
+
+
 class Consonances(Judge):
     input_parameters = ["trigger"]
 

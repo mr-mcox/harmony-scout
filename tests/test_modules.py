@@ -1,4 +1,4 @@
-from scout.modules import Rhythm, Seq, Consonances, CadenceDetector
+from scout.modules import Rhythm, Seq, Consonances, CadenceDetector, Sawtooth
 from scout.sequencer import Sequencer
 import numpy as np
 import pytest
@@ -113,3 +113,30 @@ def test_evaluate_cadence_loop():
     m.resolve_step()
     pitches = np.array([[0, 4, 7], [-1, 2, 7]])
     assert m.evaluate(pitches) == 1
+
+
+def test_sawtooth_default():
+    m = Sawtooth(sequencer=Sequencer(), period=4)
+    outs = list()
+    for i in range(5):
+        m.resolve_step()
+        outs.append(m.output["out"])
+    assert outs == [-1, -0.5, 0, 0.5, -1]
+
+
+def test_sawtooth_phase():
+    m = Sawtooth(sequencer=Sequencer(), period=4, phase=2)
+    outs = list()
+    for i in range(5):
+        m.resolve_step()
+        outs.append(m.output["out"])
+    assert outs == [0, 0.5, -1, -0.5, 0]
+
+
+def test_sawtooth_dc():
+    m = Sawtooth(sequencer=Sequencer(), period=4, is_ac=False)
+    outs = list()
+    for i in range(5):
+        m.resolve_step()
+        outs.append(m.output["out"])
+    assert outs == [0, 0.25, 0.5, 0.75, 0]
