@@ -1,0 +1,72 @@
+player:
+  beats_per_unit: 1
+  bpm: 90
+sequencer:
+  legnth: 8
+breeder:
+  generations: 5
+modules:
+- type: rhythm
+  params:
+    durations:
+    - 1
+    - 2
+    - 1
+- type: sawtooth
+  name: mod_consonance
+  params:
+    period: 4
+    is_ac: False
+  patches:
+  - dest: clock
+    source:
+      name: rhythm
+- type: seq
+  name: plagel_seq
+  params:
+    states: [0, 0, 0, 1, 0, 0, 0, 0]
+  patches:
+  - source:
+      name: rhythm
+    dest: clock
+- type: seq
+  name: authentic_seq
+  params:
+    states: [0, 0, 0, 0, 0, 0, 0, 1]
+  patches:
+  - source:
+      name: rhythm
+    dest: clock
+- type: consonances
+  params:
+    class_value:
+    - [0, 1]
+    - [7, 0.5]
+  patches:
+  - dest: weight
+    source:
+      name: mod_consonance
+- type: cadence_detector
+  name: plagel_detector
+  params:
+    n: 4
+  patches:
+  - dest: weight_plagel
+    source:
+      name: plagel_seq
+- type: cadence_detector
+  name: authentic_detector
+  params:
+    n: 4
+  patches:
+  - dest: weight_plagel
+    source:
+      name: authentic_seq
+- type: cadence_detector
+  name: ascending_detector
+  params:
+    n: 4
+  patches:
+  - dest: weight_ascending
+    source:
+      name: mod_consonance
