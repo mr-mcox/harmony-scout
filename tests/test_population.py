@@ -47,7 +47,7 @@ class RandomCreature(Creature):
 
 def test_percentile_fitness():
     evolve_params = {"fill": {"target_n": 100}}
-    j = SumJudge(sequencer=Sequencer())
+    j = SumJudge()
     cf = CreatureFactory(creature_class=RandomCreature, judges=[j])
     p = Population(evolve_params=evolve_params, creature_factory=cf)
     p.fill()
@@ -75,7 +75,7 @@ def test_evolve_improves():
         "cull": {"target_n": 10},
         "evolve": {"target_n": 20, "origin_probs": [0.5, 0.3, 0.2]},
     }
-    j = SumJudge(sequencer=Sequencer())
+    j = SumJudge()
     cf = HackedEvolutionCreatureFactory(creature_class=Creature, judges=[j])
     p = Population(
         creature_factory=cf, evolve_params=evolve_params, random_state=random_state

@@ -16,7 +16,7 @@ class MyJudge(Judge):
 
 
 def test_judge_has_array_output():
-    j = MyJudge(sequencer=Sequencer())
+    j = MyJudge()
     j.resolve_step()
     exp = np.array([[0, 1]])
     assert_array_equal(j.array_output["out"], exp)

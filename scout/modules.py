@@ -37,15 +37,15 @@ class InputLookup:
 class Module:
     input_parameters = list()
 
-    def __init__(self, sequencer, name=None, patches=None, level=None):
+    def __init__(self, name=None, patches=None, level=None):
         patches = patches if patches else list()
-        self.sequencer = sequencer
+        self.sequencer = None
         self._name = name
         self.output = dict()
         self._input = None
         self.patches = patches
-        connections = [(c["source"]["name"], self.name) for c in patches]
-        sequencer.register(self, connections=connections, level=level)
+        self.connections = [(c["source"]["name"], self.name) for c in patches]
+        self.level = level
 
     def update_outputs(self):
         pass

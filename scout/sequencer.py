@@ -17,9 +17,8 @@ def build_modules(configs, sequencer):
         else:
             raise ValueError(f"Module type {module_type} unknown")
         additional_params = config.get("params", {})
-        module_class(
-            sequencer=sequencer, patches=config.get("patches", []), **additional_params
-        )
+        module = module_class(patches=config.get("patches", []), **additional_params)
+        sequencer.register(module)
 
 
 def graph_children(graph, parent):
@@ -38,6 +37,9 @@ class Sequencer:
         self._links = set()
 
     def register(self, module, connections=None, level=None):
+        connections = module.connections
+        level = module.level
+        module.sequencer = self
         if module.name in self.modules:
             raise ValueError(f"Module name {module.name} has already been registered")
         self.modules[module.name] = module
