@@ -33,6 +33,20 @@ def test_cull_population(simple_pop):
     p.cull()
     assert len(p.creatures) == p.evolve_params["cull"]["target_n"]
 
+class MyCreature(Creature):
+
+    def __init__(self, my_param=None, **kwargs):
+        self.my_param = my_param
+        super(MyCreature, self).__init__(**kwargs)
+
+def test_pass_params_to_creature():
+    evolve_params = {"fill": {"target_n": 10}, "cull": {"target_n": 5}}
+    cf = CreatureFactory(creature_class=MyCreature, creature_kwargs={'my_param':1})
+    p = Population(evolve_params=evolve_params, creature_factory=cf)
+    p.fill()
+    assert p.creatures[0].my_param == 1
+
+
 
 class SumJudge(Judge):
     def evaluate(self, phenotype):

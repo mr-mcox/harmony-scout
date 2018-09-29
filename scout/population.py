@@ -99,27 +99,33 @@ class CreatureFactory:
     def __init__(
         self,
         creature_class,
+        creature_kwargs=None,
         random_state=None,
         gene_shape=None,
         judges=None,
         sub_population_factory=None,
     ):
         self.creature_class = creature_class
+        self.creature_kwargs = dict() if creature_kwargs is None else creature_kwargs
         self.judges = list() if judges is None else judges
         self.random_state = RandomState() if random_state is None else random_state
         self.gene_shape = (1, 1) if gene_shape is None else gene_shape
         self.sub_population_factory = sub_population_factory
 
-    def from_random(self, parent=None):
-        shape = self.gene_shape
-        rand = self.random_state
-        gene = rand.uniform(size=shape)
+    def create_creature_from_gene(self, gene, parent):
         return self.creature_class(
             gene=gene,
             judges=self.judges,
             population_factory=self.sub_population_factory,
             parent=parent,
+            **self.creature_kwargs
         )
+
+    def from_random(self, parent=None):
+        shape = self.gene_shape
+        rand = self.random_state
+        gene = rand.uniform(size=shape)
+        return self.create_creature_from_gene(gene, parent)
 
     def from_mutation(self, creature, parent=None):
         gene = creature.genotype
@@ -129,12 +135,7 @@ class CreatureFactory:
         mutation_amt = rand.normal(scale=0.1, size=shape)
         mutation = mutate_at * mutation_amt
         mutated_gene = gene + mutation
-        return self.creature_class(
-            gene=mutated_gene,
-            judges=self.judges,
-            population_factory=self.sub_population_factory,
-            parent=parent,
-        )
+        return self.create_creature_from_gene(mutated_gene, parent)
 
     def from_crossover(self, creatures, parent=None):
         genes = [c.genotype for c in creatures]
@@ -154,12 +155,7 @@ class CreatureFactory:
             last_gene = last_gene % len(genes)
         gene_parts.append(genes[last_gene][last_idx:])
         crossover_gene = np.concatenate(gene_parts)
-        return self.creature_class(
-            gene=crossover_gene,
-            judges=self.judges,
-            population_factory=self.sub_population_factory,
-            parent=parent,
-        )
+        return self.create_creature_from_gene(crossover_gene, parent)
 
 
 class Creature:
