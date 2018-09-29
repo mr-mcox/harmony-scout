@@ -10,14 +10,13 @@ def judge_configs():
         {
             "type": "seq",
             "params": {"states": [0, 1]},
-            "patches": [{"source": {"name": "rhythm"}, "dest": "trigger"}],
+            "patches": [{"source": {"name": "rhythm"}, "dest": "clock"}],
         },
         {
             "type": "consonances",
             "params": {"class_value": [(0, 1), (7, 0.5)]},
             "patches": [
                 {"source": {"name": "seq"}, "dest": "weight"},
-                {"source": {"name": "rhythm"}, "dest": "trigger"},
             ],
         },
     ]
@@ -27,7 +26,7 @@ def judge_configs():
 def test_story(judge_configs):
     # Given a dictionary of judge definitions
     # And a sequencer
-    s = Sequencer(length=8)
+    s = Sequencer(length=4)
     # A judge factory
     build_modules(configs=judge_configs, sequencer=s)
     # When the sequencer is run
@@ -36,5 +35,5 @@ def test_story(judge_configs):
     good_phenotype = np.array([3, 0, 1, 7])
     bad_phenotype = np.array([0, 1, 7, 3])
     judge = s.for_level["pitch_class"][0]
-    assert judge.evaluate(good_phenotype) == 1.5
     assert judge.evaluate(bad_phenotype) == 0
+    assert judge.evaluate(good_phenotype) == 1.5

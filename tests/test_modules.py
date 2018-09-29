@@ -15,12 +15,21 @@ def test_rhythm_out():
 
 def test_sequencer_out():
     m = Seq(states=[0, 1])
-    inputs = [1, 0, 1]
     outs = list()
     for i in range(3):
         m.resolve_step()
         outs.append(m.output["out"])
     assert outs == [0, 1, 0]
+
+def test_sequencer_from_clock():
+    m = Seq(states=[0, 1])
+    outs = list()
+    clocks = [0, 0.25, 0.5]
+    for c in clocks:
+        m.input['clock'] = c
+        m.resolve_step()
+        outs.append(m.output["out"])
+    assert outs == [0, 0, 1]
 
 
 @pytest.mark.parametrize(

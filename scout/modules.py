@@ -119,7 +119,7 @@ class Rhythm(Module):
         self.output["out"] = self.next_output
         self.total += self.durations[self.i]
         total_durations = sum(self.durations)
-        self.next_output = (self.total % total_durations)/total_durations
+        self.next_output = (self.total % total_durations) / total_durations
         self.i = (self.i + 1) % len(self.durations)
 
 
@@ -138,18 +138,24 @@ class Seq(Module):
 
     """
 
+    input_parameters = ["clock"]
+
     def __init__(self, states=None, **kwargs):
         super().__init__(**kwargs)
         states = [0] if states is None else states
         self.states = states
         self.i = 0
         self.output["out"] = self.states[0]
+        self.clock = None
 
     def update_outputs(self):
         states = self.states
-        out = states[self.i % len(states)]
-        self.i += 1
-        self.output["out"] = out
+        if self.input["clock"] is None:
+            self.output["out"] = states[self.i % len(states)]
+            self.i += 1
+        else:
+            i = int(self.input["clock"] * len(states))
+            self.output["out"] = states[i]
 
 
 class Sawtooth(Module):
@@ -171,7 +177,6 @@ class Sawtooth(Module):
 
 
 class Consonances(Judge):
-
     def __init__(self, class_value=None, **kwargs):
         super().__init__(level="pitch_class", **kwargs)
         self.class_value = list() if class_value is None else class_value
