@@ -162,13 +162,14 @@ class Sawtooth(Module):
 
     input_parameters = ['clock']
 
-    def __init__(self, period=4, is_ac=True, phase=0, **kwargs):
+    def __init__(self, period=4, is_ac=True, phase=0, invert=False, **kwargs):
         super().__init__(**kwargs)
         self.output = {"out": -1}
         self.period = period
         self.i = 0
         self.phase = phase
         self.is_ac = is_ac
+        self.invert = invert
         self.clock = None
 
     def update_outputs(self):
@@ -178,6 +179,8 @@ class Sawtooth(Module):
             clock = self.i
             self.i += 1
         out = ((self.phase + clock) % period) / period
+        if self.invert:
+            out = 1 - out
         if self.is_ac:
             out = out * 2 - 1
         self.output["out"] = out

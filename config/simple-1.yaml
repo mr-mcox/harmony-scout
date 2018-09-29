@@ -17,6 +17,7 @@ modules:
   params:
     period: 1
     is_ac: False
+    invert: True
   patches:
   - dest: clock
     source:

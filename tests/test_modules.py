@@ -155,3 +155,19 @@ def test_sawtooth_dc():
         m.resolve_step()
         outs.append(m.output["out"])
     assert outs == [0, 0.25, 0.5, 0.75, 0]
+
+def test_sawtooth_invert():
+    m = Sawtooth(period=4, invert=True)
+    outs = list()
+    for i in range(5):
+        m.resolve_step()
+        outs.append(m.output["out"])
+    assert outs == [1, 0.5, 0, -0.5, 1]
+
+def test_sawtooth_invert_dc():
+    m = Sawtooth(period=4, invert=True, is_ac=False)
+    outs = list()
+    for i in range(5):
+        m.resolve_step()
+        outs.append(m.output["out"])
+    assert outs == [1, 0.75, 0.5, 0.25, 1]
