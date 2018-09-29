@@ -21,12 +21,13 @@ def test_sequencer_out():
         outs.append(m.output["out"])
     assert outs == [0, 1, 0]
 
+
 def test_sequencer_from_clock():
     m = Seq(states=[0, 1])
     outs = list()
     clocks = [0, 0.25, 0.5]
     for c in clocks:
-        m.input['clock'] = c
+        m.input["clock"] = c
         m.resolve_step()
         outs.append(m.output["out"])
     assert outs == [0, 0, 1]
@@ -122,6 +123,17 @@ def test_sawtooth_default():
     m = Sawtooth(period=4)
     outs = list()
     for i in range(5):
+        m.resolve_step()
+        outs.append(m.output["out"])
+    assert outs == [-1, -0.5, 0, 0.5, -1]
+
+
+def test_sawtooth_clock():
+    m = Sawtooth(period=1)
+    clocks = [0, 0.25, 0.5, 0.75, 0]
+    outs = list()
+    for c in clocks:
+        m.input["clock"] = c
         m.resolve_step()
         outs.append(m.output["out"])
     assert outs == [-1, -0.5, 0, 0.5, -1]

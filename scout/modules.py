@@ -159,6 +159,9 @@ class Seq(Module):
 
 
 class Sawtooth(Module):
+
+    input_parameters = ['clock']
+
     def __init__(self, period=4, is_ac=True, phase=0, **kwargs):
         super().__init__(**kwargs)
         self.output = {"out": -1}
@@ -166,14 +169,18 @@ class Sawtooth(Module):
         self.i = 0
         self.phase = phase
         self.is_ac = is_ac
+        self.clock = None
 
     def update_outputs(self):
         period = self.period
-        out = ((self.phase + self.i) % period) / period
+        clock = self.input['clock']
+        if clock is None:
+            clock = self.i
+            self.i += 1
+        out = ((self.phase + clock) % period) / period
         if self.is_ac:
             out = out * 2 - 1
         self.output["out"] = out
-        self.i += 1
 
 
 class Consonances(Judge):
