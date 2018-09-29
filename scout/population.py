@@ -25,7 +25,7 @@ class Population:
     ):
         self.random_state = RandomState() if random_state is None else random_state
         self.creature_factory = creature_factory
-        self.parent = parent
+        self.creature_factory.parent = parent
 
         e_params = {
             "fill": {"target_n": 10},
@@ -40,7 +40,7 @@ class Population:
 
     def fill(self):
         for i in range(self.evolve_params["fill"]["target_n"]):
-            self.creatures.append(self.creature_factory.from_random(parent=self.parent))
+            self.creatures.append(self.creature_factory.from_random())
 
     def cull(self):
         creatures = self.creatures
@@ -66,13 +66,13 @@ class Population:
                     gen_types, p=evolve_params["evolve"]["origin_probs"]
                 )
                 if gen_type == "random":
-                    new_creatures.append(cf.from_random(parent=self.parent))
+                    new_creatures.append(cf.from_random())
                 elif gen_type == "mutate":
                     idx = np.floor(rand.uniform(size=1) ** 2 * len(creatures)).astype(
                         int
                     )[0]
                     new_creatures.append(
-                        cf.from_mutation(creatures[idx], parent=self.parent)
+                        cf.from_mutation(creatures[idx])
                     )
                 elif gen_type == "crossover":
                     idxs = np.floor(rand.uniform(size=3) ** 2 * len(creatures)).astype(
@@ -81,7 +81,7 @@ class Population:
                     sources = list()
                     for i in np.nditer(idxs):
                         sources.append(creatures[i])
-                    new_creatures.append(cf.from_crossover(sources, parent=self.parent))
+                    new_creatures.append(cf.from_crossover(sources))
                 else:
                     ValueError(f"{gen_type} is an invalid origin_type")
             self.creatures = creatures + new_creatures
@@ -111,23 +111,24 @@ class CreatureFactory:
         self.random_state = RandomState() if random_state is None else random_state
         self.gene_shape = (1, 1) if gene_shape is None else gene_shape
         self.sub_population_factory = sub_population_factory
+        self.parent = None
 
-    def create_creature_from_gene(self, gene, parent):
+    def create_creature_from_gene(self, gene):
         return self.creature_class(
             gene=gene,
             judges=self.judges,
             population_factory=self.sub_population_factory,
-            parent=parent,
+            parent=self.parent,
             **self.creature_kwargs
         )
 
-    def from_random(self, parent=None):
+    def from_random(self):
         shape = self.gene_shape
         rand = self.random_state
         gene = rand.uniform(size=shape)
-        return self.create_creature_from_gene(gene, parent)
+        return self.create_creature_from_gene(gene)
 
-    def from_mutation(self, creature, parent=None):
+    def from_mutation(self, creature):
         gene = creature.genotype
         rand = self.random_state
         shape = gene.shape
@@ -135,9 +136,9 @@ class CreatureFactory:
         mutation_amt = rand.normal(scale=0.1, size=shape)
         mutation = mutate_at * mutation_amt
         mutated_gene = gene + mutation
-        return self.create_creature_from_gene(mutated_gene, parent)
+        return self.create_creature_from_gene(mutated_gene)
 
-    def from_crossover(self, creatures, parent=None):
+    def from_crossover(self, creatures):
         genes = [c.genotype for c in creatures]
         rand = self.random_state
         n_crossover = rand.binomial(genes[0].shape[0], 0.1)
@@ -155,7 +156,7 @@ class CreatureFactory:
             last_gene = last_gene % len(genes)
         gene_parts.append(genes[last_gene][last_idx:])
         crossover_gene = np.concatenate(gene_parts)
-        return self.create_creature_from_gene(crossover_gene, parent)
+        return self.create_creature_from_gene(crossover_gene)
 
 
 class Creature:
