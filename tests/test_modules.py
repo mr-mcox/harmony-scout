@@ -5,23 +5,22 @@ from numpy.testing import assert_array_equal, assert_almost_equal
 
 
 def test_rhythm_out():
-    m = Rhythm(durations=[1, 2])
+    m = Rhythm(durations=[1, 2, 1])
     outs = list()
-    for i in range(6):
+    for i in range(4):
         m.resolve_step()
         outs.append(m.output["out"])
-    assert outs == [1, 1, 0, 1, 1, 0]
+    assert outs == [x / 4 for x in [0, 1, 3, 0]]
 
 
 def test_sequencer_out():
     m = Seq(states=[0, 1])
     inputs = [1, 0, 1]
     outs = list()
-    for i in inputs:
-        m.input["trigger"] = i
+    for i in range(3):
         m.resolve_step()
         outs.append(m.output["out"])
-    assert outs == [0, 0, 1]
+    assert outs == [0, 1, 0]
 
 
 @pytest.mark.parametrize(
@@ -30,7 +29,6 @@ def test_sequencer_out():
 def test_consonance_score(pitches, weight, score):
     m = Consonances(class_value=[(0, 1), (7, 0.5)])
     m.input["weight"] = weight
-    m.input["trigger"] = 1
     m.resolve_step()
     pitch_class = np.array([pitches])
     assert m.evaluate(pitch_class) == score
@@ -84,7 +82,6 @@ def test_evaluate_authentic_cadence(cadence, pitches, expected):
     m = CadenceDetector(scale=[0, 2, 4, 5, 7, 9, 11], n=3)
     weight_type = f"weight_{cadence}"
     m.input[weight_type] = 1
-    m.input["trigger"] = 1
     m.resolve_step()
     m.input[weight_type] = 0
     m.resolve_step()
@@ -95,7 +92,6 @@ def test_evaluate_authentic_cadence(cadence, pitches, expected):
 def test_evaluate_cadence_weights():
     m = CadenceDetector(scale=[0, 2, 4, 5, 7, 9, 11], n=3)
     m.input["weight_authentic"] = 0.5
-    m.input["trigger"] = 1
     m.resolve_step()
     m.input["weight_authentic"] = 0
     m.resolve_step()
@@ -105,7 +101,6 @@ def test_evaluate_cadence_weights():
 
 def test_evaluate_cadence_loop():
     m = CadenceDetector(scale=[0, 2, 4, 5, 7, 9, 11], n=3)
-    m.input["trigger"] = 1
     m.input["weight_authentic"] = 0
     m.resolve_step()
     m.input["weight_authentic"] = 1

@@ -78,8 +78,6 @@ class Judge(Module):
 
     def resolve_step(self):
         super().resolve_step()
-        if self.input["trigger"] != 1:
-            return
         array_output = self.array_output
         for k, v in self.array_vals().items():
             if k in array_output:
@@ -96,7 +94,7 @@ class Judge(Module):
 
 
 class Rhythm(Module):
-    """Generate triggers at specified durations
+    """Determine clock cycle at step
 
     Parameters
     ----------
@@ -106,27 +104,27 @@ class Rhythm(Module):
     Returns
     -------
     out: float
-        1 on trigger, 0 otherwise
+        Clock time at activation
     """
 
     def __init__(self, durations=None, **kwargs):
         super().__init__(**kwargs)
-        durations = [1] if durations is None else durations
-        activations = list()
-        for duration in durations:
-            activations.extend([1] + [0] * (duration - 1))
-        self.activations = activations
+        self.durations = [1] if durations is None else durations
         self.i = 0
-        self.output = {"out": 1}
+        self.total = 0
+        self.next_output = 0
+        self.output = {"out": self.next_output}
 
     def update_outputs(self):
-        out = self.activations[self.i % len(self.activations)]
-        self.output["out"] = out
-        self.i += 1
+        self.output["out"] = self.next_output
+        self.total += self.durations[self.i]
+        total_durations = sum(self.durations)
+        self.next_output = (self.total % total_durations)/total_durations
+        self.i = (self.i + 1) % len(self.durations)
 
 
 class Seq(Module):
-    """Advance sequence on trigger
+    """Advance sequence
 
     Parameters
     ----------
@@ -140,22 +138,18 @@ class Seq(Module):
 
     """
 
-    input_parameters = ["trigger"]
-
-    def __init__(self, states=None, trigger=0, **kwargs):
+    def __init__(self, states=None, **kwargs):
         super().__init__(**kwargs)
         states = [0] if states is None else states
         self.states = states
-        self.trigger = trigger
         self.i = 0
         self.output["out"] = self.states[0]
 
     def update_outputs(self):
         states = self.states
-        if self.input["trigger"] == 1:
-            out = states[self.i % len(states)]
-            self.i += 1
-            self.output["out"] = out
+        out = states[self.i % len(states)]
+        self.i += 1
+        self.output["out"] = out
 
 
 class Sawtooth(Module):
@@ -177,12 +171,10 @@ class Sawtooth(Module):
 
 
 class Consonances(Judge):
-    input_parameters = ["trigger"]
 
-    def __init__(self, class_value=None, trigger=0, **kwargs):
+    def __init__(self, class_value=None, **kwargs):
         super().__init__(level="pitch_class", **kwargs)
         self.class_value = list() if class_value is None else class_value
-        self.trigger = trigger
 
     def legal_pitch_vals(self):
         class_vals = self.class_value
@@ -221,7 +213,6 @@ class Consonances(Judge):
 
 class CadenceDetector(Judge):
     input_parameters = [
-        "trigger",
         "weight_authentic",
         "weight_plagel",
         "weight_deceptive",
@@ -233,7 +224,6 @@ class CadenceDetector(Judge):
         self,
         scale,
         n=3,
-        trigger=0,
         weight_authentic=0,
         weight_plagel=0,
         weight_deceptive=0,
@@ -245,7 +235,6 @@ class CadenceDetector(Judge):
         self.scale = scale
         self.n = n
         self.role_num, self.role_ideals = self.construct_ideals()
-        self.trigger = trigger
         self.weight_authentic = weight_authentic
         self.weight_plagel = weight_plagel
         self.weight_deceptive = weight_deceptive

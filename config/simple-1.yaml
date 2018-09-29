@@ -15,7 +15,7 @@ modules:
 - type: sawtooth
   name: mod_consonance
   params:
-    period: 4
+    period: 1
     is_ac: False
   patches:
   - dest: clock
