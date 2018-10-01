@@ -2,7 +2,7 @@ player:
   beats_per_unit: 1
   bpm: 90
 sequencer:
-  legnth: 8
+  length: 6
 breeder:
   generations: 5
 modules:
@@ -51,23 +51,14 @@ modules:
   name: plagel_detector
   params:
     n: 4
+    scale: [0, 2, 4, 5, 7, 9, 11]
   patches:
   - dest: weight_plagel
     source:
       name: plagel_seq
-- type: cadence_detector
-  name: authentic_detector
-  params:
-    n: 4
-  patches:
-  - dest: weight_plagel
+  - dest: weight_authentic
     source:
       name: authentic_seq
-- type: cadence_detector
-  name: ascending_detector
-  params:
-    n: 4
-  patches:
   - dest: weight_ascending
     source:
       name: mod_consonance

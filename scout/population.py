@@ -71,9 +71,7 @@ class Population:
                     idx = np.floor(rand.uniform(size=1) ** 2 * len(creatures)).astype(
                         int
                     )[0]
-                    new_creatures.append(
-                        cf.from_mutation(creatures[idx])
-                    )
+                    new_creatures.append(cf.from_mutation(creatures[idx]))
                 elif gen_type == "crossover":
                     idxs = np.floor(rand.uniform(size=3) ** 2 * len(creatures)).astype(
                         int
@@ -95,6 +93,39 @@ class Population:
         return np.percentile(scores, ptile * 100)
 
 
+class Crossover:
+    def __init__(self, random_state=None):
+        self.random_state = RandomState() if random_state is None else random_state
+
+    def crossover(self, genes, n_crossings):
+        n_crossings = max(n_crossings, 1)
+        cutpoints = self.random_state.dirichlet(np.ones(n_crossings))
+        return self.crossover_from_cutpoints(genes, cutpoints)
+
+    def crossover_from_cutpoints(self, genes, cutpoints):
+        selector = self.cutpoint_select(genes.shape, cutpoints)
+        return np.sum(selector * genes, axis=0)
+
+    def cutpoint_select(self, genes_shape, cutpoints):
+        n_items, length, rep = genes_shape
+        last = 0
+        item_i = 0
+        cut_index = length * np.cumsum(cutpoints)
+        slices = np.zeros(shape=(n_items, length))
+        for i in cut_index:
+            slices[item_i, last : int(round(i))] = 1
+            last = int(round(i))
+            item_i += 1
+            item_i = item_i % n_items
+        slices_max = slices.max(axis=0)
+        if not (slices_max == 1).all():
+            raise ValueError(
+                f"These cutpoints {cutpoints} with this genes shape {genes_shape} yielded this {slices_max}"
+            )
+        repeated = np.expand_dims(slices, axis=2).repeat(rep, axis=2)
+        return repeated
+
+
 class CreatureFactory:
     def __init__(
         self,
@@ -112,15 +143,19 @@ class CreatureFactory:
         self.gene_shape = (1, 1) if gene_shape is None else gene_shape
         self.sub_population_factory = sub_population_factory
         self.parent = None
+        self.crossover = Crossover(random_state=random_state)
 
     def create_creature_from_gene(self, gene):
-        return self.creature_class(
+        creature = self.creature_class(
             gene=gene,
             judges=self.judges,
             population_factory=self.sub_population_factory,
             parent=self.parent,
-            **self.creature_kwargs
+            **self.creature_kwargs,
         )
+        if creature.phenotype is not None:
+            assert creature.phenotype.shape == self.gene_shape
+        return creature
 
     def from_random(self):
         shape = self.gene_shape
@@ -139,23 +174,10 @@ class CreatureFactory:
         return self.create_creature_from_gene(mutated_gene)
 
     def from_crossover(self, creatures):
-        genes = [c.genotype for c in creatures]
+        genes = np.array([c.genotype for c in creatures])
         rand = self.random_state
         n_crossover = rand.binomial(genes[0].shape[0], 0.1)
-        crossover_points_float = rand.dirichlet(np.ones(n_crossover))
-        crossover_points = crossover_points_float.round().astype(int)
-        gene_shift_float = rand.uniform(size=n_crossover) * len(genes)
-        gene_shift = np.floor(gene_shift_float).astype(int) + 1
-        last_gene = 0
-        last_idx = 0
-        gene_parts = list()
-        for point, shift in zip(crossover_points, gene_shift):
-            gene_parts.append(genes[last_gene][last_idx:point])
-            last_idx = point
-            last_gene += shift
-            last_gene = last_gene % len(genes)
-        gene_parts.append(genes[last_gene][last_idx:])
-        crossover_gene = np.concatenate(gene_parts)
+        crossover_gene = self.crossover.crossover(genes=genes, n_crossings=n_crossover)
         return self.create_creature_from_gene(crossover_gene)
 
 
@@ -216,7 +238,8 @@ def conform_normalized_pitch_class(gene):
         n_shifts += 1
     return gene
 
-def normalize_pitch_class( pitches, octave_steps=12):
+
+def normalize_pitch_class(pitches, octave_steps=12):
     pitch_classes = pitches / octave_steps
     pitch_classes = conform_normalized_pitch_class(pitch_classes) * octave_steps
     pitch_classes = pitch_classes.round().astype(int)
@@ -245,6 +268,8 @@ class PitchClassCreature(Creature):
 
     def conform_phenotype(self, gene, octave_steps=12):
         valid_pheno = self.valid_phenotypes
+        if valid_pheno is None:
+            return None
         gene_mult = gene * octave_steps
         diff = gene_mult - np.expand_dims(valid_pheno, axis=1).repeat(
             gene.shape[0], axis=1
@@ -267,15 +292,13 @@ class VoicingCreature(Creature):
     def compute_voices_for(self, pitches):
         voice_dict = defaultdict(list)
         octave_steps = self.octave_steps
-        pitch_classes = normalize_pitch_class( pitches, octave_steps)
+        pitch_classes = normalize_pitch_class(pitches, octave_steps)
         for i in range(pitches.shape[0]):
             pitch_class = tuple(pitch_classes[i].tolist())
             voice_dict[pitch_class].append(pitches[i])
         for key, values in voice_dict.items():
             voice_dict[key] = np.stack(values, axis=0)
         return voice_dict
-
-
 
     def conform_genotype(self, gene):
         return np.mod(gene, 1)

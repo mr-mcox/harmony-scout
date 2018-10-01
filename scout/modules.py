@@ -58,8 +58,9 @@ class Module:
 
     @property
     def name(self):
-        if not self._name:
-            return type(self).__name__.lower()
+        if self._name is None:
+            self._name = type(self).__name__.lower()
+        return self._name
 
     @property
     def input(self):
@@ -160,7 +161,7 @@ class Seq(Module):
 
 class Sawtooth(Module):
 
-    input_parameters = ['clock']
+    input_parameters = ["clock"]
 
     def __init__(self, period=4, is_ac=True, phase=0, invert=False, **kwargs):
         super().__init__(**kwargs)
@@ -174,7 +175,7 @@ class Sawtooth(Module):
 
     def update_outputs(self):
         period = self.period
-        clock = self.input['clock']
+        clock = self.input["clock"]
         if clock is None:
             clock = self.i
             self.i += 1

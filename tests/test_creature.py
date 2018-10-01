@@ -3,10 +3,11 @@ from scout.population import (
     pitch_classes_with_pitch,
     Creature,
     CreatureFactory,
+    Crossover,
 )
 import pytest
 import numpy as np
-from numpy.testing import assert_almost_equal
+from numpy.testing import assert_almost_equal, assert_array_equal
 from numpy.random import RandomState
 import attr
 
@@ -70,7 +71,7 @@ def test_pitch_class_from_mutation():
 
 
 def test_pitch_class_from_crossover():
-    rand = RandomState(43)
+    rand = RandomState(42)
     cf = CreatureFactory(
         creature_class=PitchClassCreature, random_state=rand, gene_shape=(20, 3)
     )
@@ -102,3 +103,27 @@ def test_creature_fitness():
     c = Creature(judges=[j1, j2], gene=None)
     c._proto_gene = 0  # To not trip the error
     assert c.fitness() == 1.5
+
+
+def test_crossover():
+    c = Crossover()
+    genes = np.array(
+        [
+            [[1, 1], [0, 0], [0, 0], [0, 0]],
+            [[0, 0], [1, 1], [0, 0], [0, 0]],
+            [[0, 0], [0, 0], [1, 1], [0, 0]],
+        ]
+    )
+    res = c.crossover_from_cutpoints(
+        genes=genes, cutpoints=np.array([0.25, 0.25, 0.25, 0.25])
+    )
+    exp = np.array([[1, 1], [1, 1], [1, 1], [0, 0]])
+    assert_array_equal(res, exp)
+
+
+def test_crossover_select_1():
+    c = Crossover()
+    cutpoints = np.array([0.5, 0.5])
+    res = c.cutpoint_select((2, 2, 2), cutpoints)
+    exp = np.array([[[1, 1], [0, 0]], [[0, 0], [1, 1]]])
+    assert_array_equal(res, exp)

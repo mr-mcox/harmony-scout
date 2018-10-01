@@ -7,17 +7,23 @@ from collections import defaultdict
 def build_modules(configs, sequencer):
     for config in configs:
         module_type = config["type"]
-        module_class = None
-        if module_type == "rhythm":
-            module_class = modules.Rhythm
-        elif module_type == "seq":
-            module_class = modules.Seq
-        elif module_type == "consonances":
-            module_class = modules.Consonances
-        else:
+        module_lookup = {
+            "rhythm": modules.Rhythm,
+            "seq": modules.Seq,
+            "consonances": modules.Consonances,
+            "sawtooth": modules.Sawtooth,
+            "cadence_detector": modules.CadenceDetector,
+        }
+        try:
+            module_class = module_lookup[module_type]
+        except KeyError:
             raise ValueError(f"Module type {module_type} unknown")
         additional_params = config.get("params", {})
-        module = module_class(patches=config.get("patches", []), **additional_params)
+        module = module_class(
+            name=config.get("name"),
+            patches=config.get("patches", []),
+            **additional_params,
+        )
         sequencer.register(module)
 
 
